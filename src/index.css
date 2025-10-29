@@ -84,6 +84,11 @@ body {
   animation: slideUp 0.4s ease-out;
 }
 
+.animate-shimmer {
+  background-size: 200% auto;
+  animation: shimmer 3s linear infinite;
+}
+
 /* Glassmorphism */
 .glass {
   background: rgba(15, 17, 23, 0.7);

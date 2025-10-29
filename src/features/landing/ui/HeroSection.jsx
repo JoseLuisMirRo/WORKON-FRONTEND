@@ -4,7 +4,7 @@ import { ArrowRight, Zap, Shield } from '../../../components/ui/Icons'
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden py-20 md:py-32">
+    <section className="relative overflow-hidden pt-8 pb-20 md:pt-16 md:pb-32">
       {/* Fondo animado con gradientes */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-primary/20 blur-3xl animate-pulse"></div>
@@ -36,27 +36,66 @@ export function HeroSection() {
             Conecta con talento global mediante contratos inteligentes. Pagos seguros, transparentes y sin intermediarios en la blockchain de Stellar.
           </p>
 
-          {/* Botones CTA */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up" style={{ animationDelay: '0.3s' }}>
-            <Button asChild size="lg" className="group w-full sm:w-auto bg-gradient-to-r from-primary via-accent to-primary hover:shadow-xl hover:shadow-primary/50 hover:scale-105 transition-all duration-300 border-0" style={{ backgroundSize: '200% auto' }}>
-              <Link to="/feed" className="flex items-center gap-2">
-                Crear Perfil
-                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" size={20} />
+          {/* Botones CTA - Acciones Core */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+            {/* Botón Crear Perfil - Freelancers */}
+            <Button 
+              asChild 
+              size="lg" 
+              className="group relative w-full sm:w-auto px-8 py-6 text-lg font-bold bg-gradient-to-r from-primary via-accent to-primary hover:shadow-2xl hover:shadow-primary/60 transition-all duration-500 border-0 overflow-hidden animate-shimmer"
+              style={{ backgroundSize: '200% auto' }}
+            >
+              <Link to="/registro?type=freelancer" className="flex items-center gap-3">
+                {/* Efecto de brillo animado */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                
+                <span className="relative z-10 flex items-center gap-3">
+                  <Zap className="h-6 w-6 animate-pulse" size={24} />
+                  Crear Perfil
+                  <ArrowRight className="h-6 w-6 transition-transform group-hover:translate-x-2 group-hover:scale-110" size={24} />
+                </span>
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="w-full sm:w-auto glass border-2 border-white/30 hover:border-white/60 hover:bg-white/10 backdrop-blur-sm hover:scale-105 transition-all duration-300">
-              <Link to="/feed">
-                Publicar Trabajo
+
+            {/* Botón Publicar Trabajo - Empleadores */}
+            <Button 
+              asChild 
+              size="lg" 
+              className="group relative w-full sm:w-auto px-8 py-6 text-lg font-bold bg-gradient-to-r from-accent via-secondary to-accent hover:shadow-2xl hover:shadow-accent/60 transition-all duration-500 border-0 overflow-hidden"
+              style={{ backgroundSize: '200% auto' }}
+            >
+              <Link to="/registro?type=employer" className="flex items-center gap-3">
+                {/* Efecto de brillo animado */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                
+                <span className="relative z-10 flex items-center gap-3">
+                  <Shield className="h-6 w-6 animate-pulse" size={24} />
+                  Publicar Trabajo
+                  <ArrowRight className="h-6 w-6 transition-transform group-hover:translate-x-2 group-hover:scale-110" size={24} />
+                </span>
               </Link>
             </Button>
           </div>
+
+          {/* Texto adicional para clarificar - Justo debajo de los botones */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-8 text-xs text-muted-foreground -mt-2">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
+              <span>Para Freelancers</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-accent animate-pulse"></div>
+              <span>Para Empresas</span>
+            </div>
+          </div>
+
           {/* Logo Stellar */}
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center justify-center gap-2 pt-4">
             <img src="/stellar.png" alt="Stellar" className="h-10 w-10" />
           </div>
 
           {/* Trust badge */}
-          <div className="flex items-center justify-center gap-2 pt-8 text-sm text-muted-foreground">
+          <div className="flex items-center justify-center gap-2 pt-4 text-sm text-muted-foreground">
             <Shield className="h-5 w-5 text-accent" size={20} />
             <span>Pagos seguros con contratos inteligentes auditados</span>
           </div>

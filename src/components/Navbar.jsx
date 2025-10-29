@@ -11,6 +11,7 @@ import {
 } from './ui/DropdownMenu'
 import { Badge } from './ui/Badge'
 import { Bell, User, Wallet, LogOut, Settings } from './ui/Icons'
+import { LogoIcon } from './Logo'
 import { cn } from '../lib/utils'
 
 export function Navbar() {
@@ -22,13 +23,8 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 w-full border-b border-border/40 glass shadow-lg">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-8">
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary shadow-lg shadow-primary/30 group-hover:shadow-xl group-hover:shadow-primary/40 transition-all duration-300">
-              <Wallet className="h-5 w-5 text-white" size={20} />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              WorkOn
-            </span>
+          <Link to="/" className="flex items-center gap-2 group transition-all duration-300 hover:opacity-80">
+            <LogoIcon size={50} className="group-hover:scale-105 transition-transform" />
           </Link>
 
           <div className="hidden md:flex items-center gap-2">

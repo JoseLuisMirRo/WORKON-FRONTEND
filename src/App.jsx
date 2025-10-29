@@ -6,14 +6,17 @@ import { MyJobsPage } from './features/my-jobs'
 import { MessagesPage } from './features/messages'
 import { EmployerDashboard } from './features/employer'
 import { CreateFreelancerProfile, CreateEmployerProfile } from './features/profile'
+import { LoginPage, RegisterPage } from './features/auth'
 
 function App() {
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-background">
         <Routes>
-          {/* Landing sin Navbar */}
+          {/* Rutas sin Navbar */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/registro" element={<RegisterPage />} />
           
           {/* Rutas con Navbar */}
           <Route path="/feed" element={
