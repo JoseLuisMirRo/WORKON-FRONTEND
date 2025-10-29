@@ -33,8 +33,7 @@ export function HeroSection() {
 
           {/* Descripción */}
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl animate-slide-up" style={{ animationDelay: '0.2s' }}>
-            Conecta con clientes de todo el mundo, cobra al instante con criptomonedas y 
-            construye tu reputación verificable en la blockchain.
+            Conecta con talento global mediante contratos inteligentes. Pagos seguros, transparentes y sin intermediarios en la blockchain de Stellar.
           </p>
 
           {/* Botones CTA */}

@@ -1,11 +1,21 @@
+import { useState } from 'react'
 import { Button } from '../../../components/ui/Button'
 import { Paperclip, Smile, Send } from '../../../components/ui/Icons'
 
-export function MessageInput({ value, onChange, onSend }) {
+export function MessageInput({ onSend, disabled }) {
+  const [message, setMessage] = useState('')
+
+  const handleSend = () => {
+    if (message.trim()) {
+      onSend(message)
+      setMessage('')
+    }
+  }
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      onSend()
+      handleSend()
     }
   }
 
@@ -17,6 +27,7 @@ export function MessageInput({ value, onChange, onSend }) {
             variant="ghost" 
             size="icon"
             className="hover:bg-accent/10 hover:text-accent flex-shrink-0"
+            disabled={disabled}
           >
             <Paperclip className="h-5 w-5" size={20} />
           </Button>
@@ -24,6 +35,7 @@ export function MessageInput({ value, onChange, onSend }) {
             variant="ghost" 
             size="icon"
             className="hover:bg-accent/10 hover:text-accent flex-shrink-0"
+            disabled={disabled}
           >
             <Smile className="h-5 w-5" size={20} />
           </Button>
@@ -31,12 +43,13 @@ export function MessageInput({ value, onChange, onSend }) {
 
         <div className="flex-1 relative group">
           <textarea
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Escribe un mensaje..."
             rows="1"
-            className="w-full px-4 py-3 pr-12 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none transition-all duration-200 shadow-sm hover:shadow-md"
+            disabled={disabled}
+            className="w-full px-4 py-3 pr-12 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ 
               minHeight: '48px', 
               maxHeight: '120px',
@@ -46,8 +59,8 @@ export function MessageInput({ value, onChange, onSend }) {
         </div>
 
         <Button
-          onClick={onSend}
-          disabled={!value.trim()}
+          onClick={handleSend}
+          disabled={!message.trim() || disabled}
           size="icon"
           className="flex-shrink-0 h-12 w-12 shadow-lg"
         >

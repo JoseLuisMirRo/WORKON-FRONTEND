@@ -3,82 +3,74 @@ const mockMyJobs = [
   {
     id: "1",
     title: "Desarrollador Full Stack Senior",
-    company: "TechCorp SA",
-    companyLogo: "/tech-company-logo.jpg",
-    budget: "1,200 USDC",
-    status: "in_progress", // applied, in_progress, completed, cancelled
+    client: {
+      name: "TechCorp SA",
+      avatar: "/placeholder.svg?height=48&width=48",
+      verified: true
+    },
+    amount: 1200,
+    status: "en-progreso",
     progress: 65,
-    appliedDate: "2025-01-15",
-    startDate: "2025-01-20",
-    deadline: "2025-02-28",
+    startDate: "20 Ene 2025",
+    deadline: "28 Feb 2025",
     description: "Desarrollo de plataforma e-commerce con integración de pagos.",
-    deliverables: [
-      { id: 1, name: "Diseño de arquitectura", completed: true },
-      { id: 2, name: "Backend API", completed: true },
-      { id: 3, name: "Frontend UI", completed: false },
-      { id: 4, name: "Integración de pagos", completed: false },
-    ],
     skills: ["Next.js", "React", "Node.js", "TypeScript"],
-    messages: 12,
   },
   {
     id: "2",
     title: "Diseñador UI/UX para App Mobile",
-    company: "DesignHub Studio",
-    companyLogo: "/design-studio-logo.png",
-    budget: "800 USDC",
-    status: "completed",
+    client: {
+      name: "DesignHub Studio",
+      avatar: "/placeholder.svg?height=48&width=48",
+      verified: true
+    },
+    amount: 800,
+    status: "completado",
     progress: 100,
-    appliedDate: "2025-01-05",
-    startDate: "2025-01-08",
-    completedDate: "2025-01-25",
-    deadline: "2025-01-30",
+    startDate: "08 Ene 2025",
+    deadline: "25 Ene 2025",
     description: "Diseño completo de una app de fitness.",
-    rating: 5,
-    review: "Excelente trabajo, muy profesional y cumplió con todos los requerimientos.",
     skills: ["Figma", "UI/UX", "Mobile Design"],
-    messages: 8,
   },
   {
     id: "3",
     title: "Desarrollador Blockchain Soroban",
-    company: "StartupXYZ",
-    companyLogo: "/abstract-startup-logo.png",
-    budget: "2,000 USDC",
-    status: "applied",
-    progress: 0,
-    appliedDate: "2025-01-28",
+    client: {
+      name: "StartupXYZ",
+      avatar: "/placeholder.svg?height=48&width=48",
+      verified: false
+    },
+    amount: 2000,
+    status: "revision",
+    progress: 90,
+    startDate: "15 Ene 2025",
+    deadline: "15 Feb 2025",
     description: "Implementar smart contracts de marketplace.",
     skills: ["Soroban", "Rust", "Stellar"],
-    messages: 2,
   },
   {
     id: "4",
     title: "Content Writer & SEO Specialist",
-    company: "Marketing Pro Agency",
-    companyLogo: "/marketing-agency-logo.png",
-    budget: "600 USDC",
-    status: "in_progress",
+    client: {
+      name: "Marketing Pro Agency",
+      avatar: "/placeholder.svg?height=48&width=48",
+      verified: true
+    },
+    amount: 600,
+    status: "en-progreso",
     progress: 30,
-    appliedDate: "2025-01-10",
-    startDate: "2025-01-15",
-    deadline: "2025-03-15",
+    startDate: "15 Ene 2025",
+    deadline: "15 Mar 2025",
     description: "Crear contenido y optimizar SEO.",
-    deliverables: [
-      { id: 1, name: "Artículos de blog (10)", completed: true },
-      { id: 2, name: "Landing pages (5)", completed: false },
-      { id: 3, name: "Estrategia SEO", completed: false },
-    ],
     skills: ["SEO", "Content Writing", "Copywriting"],
-    messages: 5,
   },
 ]
 
 const statusLabels = {
-  applied: "Aplicado",
-  in_progress: "En Progreso",
-  completed: "Completado",
-  cancelled: "Cancelado",
+  "en-progreso": "En Progreso",
+  "completado": "Completado",
+  "revision": "En Revisión",
+  "cancelado": "Cancelado",
 }
 
 /**
@@ -125,11 +117,22 @@ export const updateDeliverable = async (jobId, deliverableId, completed) => {
  */
 export const fetchJobStats = async () => {
   await new Promise(resolve => setTimeout(resolve, 300))
+  
+  const completedJobs = mockMyJobs.filter(j => j.status === 'completado')
+  const inProgressJobs = mockMyJobs.filter(j => j.status === 'en-progreso')
+  const inReviewJobs = mockMyJobs.filter(j => j.status === 'revision')
+  
+  // Calcular ganancias mensuales
+  const monthlyEarnings = completedJobs.reduce((sum, job) => {
+    return sum + job.amount
+  }, 0)
+  
   return {
     total: mockMyJobs.length,
-    applied: mockMyJobs.filter(j => j.status === 'applied').length,
-    inProgress: mockMyJobs.filter(j => j.status === 'in_progress').length,
-    completed: mockMyJobs.filter(j => j.status === 'completed').length,
+    inProgress: inProgressJobs.length,
+    completed: completedJobs.length,
+    inReview: inReviewJobs.length,
+    monthlyEarnings: monthlyEarnings,
     totalEarned: "3,600 USDC",
     avgRating: 4.8,
   }

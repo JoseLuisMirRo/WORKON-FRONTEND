@@ -1,4 +1,3 @@
-import { Navbar } from '../../../components/Navbar'
 import { Button } from '../../../components/ui/Button'
 import { useMyJobsController } from '../controllers/useMyJobsController'
 import { MyJobCard } from './MyJobCard'
@@ -16,25 +15,21 @@ export const MyJobsPage = () => {
 
   const filters = [
     { value: 'all', label: 'Todos' },
-    { value: 'applied', label: 'Aplicados' },
-    { value: 'in_progress', label: 'En Progreso' },
-    { value: 'completed', label: 'Completados' },
+    { value: 'en-progreso', label: 'En Progreso' },
+    { value: 'revision', label: 'En Revisión' },
+    { value: 'completado', label: 'Completados' },
   ]
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-        </div>
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
+    <div className="bg-background">
 
       <div className="container mx-auto py-8 px-4">
         <div className="mb-8">

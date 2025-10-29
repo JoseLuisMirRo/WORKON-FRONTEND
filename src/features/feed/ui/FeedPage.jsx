@@ -1,5 +1,4 @@
 import { useFeedController } from '../controllers/useFeedController'
-import { Navbar } from '../../../components/Navbar'
 import { Loading } from './Loading'
 import { SearchBar } from './SearchBar'
 import { JobCard } from './JobCard'
@@ -40,8 +39,7 @@ export const FeedPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
+    <div className="bg-background">
 
       <div className="container mx-auto py-6 px-4">
         <div className="grid gap-6 lg:grid-cols-12">
