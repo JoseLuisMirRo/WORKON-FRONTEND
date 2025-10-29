@@ -30,16 +30,17 @@ export const login = async (email, password) => {
     // Guardar información en localStorage para compatibilidad
     localStorage.setItem('authToken', data.session.access_token)
     localStorage.setItem('userId', data.user.id)
-    localStorage.setItem('userType', profile?.user_type || 'freelancer')
+    localStorage.setItem('userRole', profile?.role || 'freelancer')
 
     return {
       user: {
         id: data.user.id,
         email: data.user.email,
-        type: profile?.user_type || 'freelancer',
+        role: profile?.role || 'freelancer',
         profile: profile || {
-          name: data.user.user_metadata?.name || data.user.email,
-          avatar: data.user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.email}`,
+          full_name: data.user.user_metadata?.name || data.user.email,
+          email: data.user.email,
+          avatar_url: data.user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.email}`,
         },
       },
       token: data.session.access_token,
@@ -63,8 +64,8 @@ export const register = async (userData) => {
       password: userData.password,
       options: {
         data: {
-          name: userData.name,
-          user_type: userData.type,
+          full_name: userData.name,
+          role: userData.role,
         },
       },
     })
@@ -77,9 +78,9 @@ export const register = async (userData) => {
         {
           id: data.user.id,
           email: userData.email,
-          name: userData.name,
-          user_type: userData.type,
-          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.name}`,
+          full_name: userData.name,
+          role: userData.role,
+          wallet_address: userData.wallet_address || null,
         },
       ])
 
@@ -92,17 +93,17 @@ export const register = async (userData) => {
     if (data.session) {
       localStorage.setItem('authToken', data.session.access_token)
       localStorage.setItem('userId', data.user.id)
-      localStorage.setItem('userType', userData.type)
+      localStorage.setItem('userRole', userData.role)
     }
 
     return {
       user: {
         id: data.user.id,
         email: data.user.email,
-        type: userData.type,
+        role: userData.role,
         profile: {
-          name: userData.name,
-          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.name}`,
+          full_name: userData.name,
+          email: userData.email,
         },
       },
       token: data.session?.access_token,
@@ -124,7 +125,7 @@ export const logout = async () => {
 
     localStorage.removeItem('authToken')
     localStorage.removeItem('userId')
-    localStorage.removeItem('userType')
+    localStorage.removeItem('userRole')
   } catch (error) {
     console.error('Error en logout:', error)
     throw new Error(error.message || 'Error al cerrar sesión')
@@ -159,10 +160,11 @@ export const getCurrentUser = async () => {
       user: {
         id: user.id,
         email: user.email,
-        type: profile?.user_type || localStorage.getItem('userType') || 'freelancer',
+        role: profile?.role || localStorage.getItem('userRole') || 'freelancer',
         profile: profile || {
-          name: user.user_metadata?.name || user.email,
-          avatar: user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`,
+          full_name: user.user_metadata?.full_name || user.email,
+          email: user.email,
+          avatar_url: user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`,
         },
       },
       token: session?.access_token,
@@ -183,11 +185,11 @@ export const isAuthenticated = async () => {
 }
 
 /**
- * Obtener tipo de usuario (síncrono para compatibilidad)
+ * Obtener rol de usuario (síncrono para compatibilidad)
  * @returns {string|null}
  */
-export const getUserType = () => {
-  return localStorage.getItem('userType')
+export const getUserRole = () => {
+  return localStorage.getItem('userRole')
 }
 
 /**

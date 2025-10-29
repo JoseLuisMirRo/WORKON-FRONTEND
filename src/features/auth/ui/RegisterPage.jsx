@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '../../../components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card'
-import { Badge } from '../../../components/ui/Badge'
 import { CheckCircle2, AlertCircle, User, Briefcase } from '../../../components/ui/Icons'
 import { Logo } from '../../../components/Logo'
 import { useAuth } from '../../../contexts/AuthContext'
@@ -76,11 +75,11 @@ export const RegisterPage = () => {
         name: formData.name,
         email: formData.email,
         password: formData.password,
-        type: userType
+        role: userType
       })
       
-      // Redirigir a la página de creación de perfil según el tipo
-      if (result.user.type === 'employer') {
+      // Redirigir a la página de creación de perfil según el rol
+      if (result.user.role === 'employer') {
         navigate('/crear-perfil-empresa')
       } else {
         navigate('/crear-perfil-freelancer')
