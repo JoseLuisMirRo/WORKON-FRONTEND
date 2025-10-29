@@ -23,6 +23,7 @@ export function Navbar() {
   const navigate = useNavigate()
   const { user, isAuthenticated, logout } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [walletAddress, setWalletAddress] = useState()
 
   const isActive = (path) => location.pathname === path
 
@@ -33,6 +34,26 @@ export function Navbar() {
     await logout()
     closeMobileMenu()
     navigate('/login')
+  }
+
+  async function connectFreighter() {
+    try {
+      // Check if Freighter is connected
+      const connectionResult = await isConnected();
+
+      console.log("connectionResult", connectionResult);
+      if (!connectionResult.isConnected) {
+        // Request access to Freighter
+        await requestAccess();
+      }
+
+      // Get the address after connection
+      const addressResult = await getAddress();
+      setWalletAddress(addressResult.address);
+      console.log(addressResult)
+    } catch (error) {
+      console.error("Error trying to connect wallet", error)
+    }
   }
 
   // Si no hay sesión, mostrar navbar simplificado
@@ -62,28 +83,6 @@ export function Navbar() {
   }
 
   // Navbar completo para usuarios autenticados
-  const [walletAddress, setWalletAddress] = useState();
-
-  async function connectFreighter() {
-    try {
-      // Check if Freighter is connected
-      const connectionResult = await isConnected();
-
-      console.log("connectionResult", connectionResult);
-      if (!connectionResult.isConnected) {
-        // Request access to Freighter
-        await requestAccess();
-      }
-
-      // Get the address after connection
-      const addressResult = await getAddress();
-      setWalletAddress(addressResult.address);
-      console.log(addressResult)
-    } catch (error) {
-      console.error("Error trying to connect wallet", error)
-    }
-  }
-
   return (
     <>
       <nav className="sticky top-0 z-50 w-full border-b border-border/40 glass shadow-lg">
@@ -291,18 +290,7 @@ export function Navbar() {
                 </Button>
               </Link>
 
-            {/* Menú */}
-            <div className="relative bg-background border-b border-border shadow-lg animate-in slide-in-from-top duration-200">
-              <div className="container mx-auto px-4 py-4 space-y-3">
-                {/* Enlaces de navegación */}
-                <Link to="/feed" onClick={closeMobileMenu}>
-                  <Button
-                    variant={isActive('/feed') ? 'default' : 'ghost'}
-                    className="w-full justify-start text-left"
-                  >
-                    Feed
-                  </Button>
-                </Link>
+              <div className="border-t border-border pt-3 mt-3" />
 
               {/* Información del usuario */}
               <div className="px-3 py-2">
@@ -350,18 +338,19 @@ export function Navbar() {
 
                 <div className="border-t border-border pt-3 mt-3" />
 
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-left text-destructive hover:text-destructive"
-                onClick={handleLogout}
-              >
-                <LogOut className="mr-2 h-4 w-4" size={16} />
-                Cerrar Sesión
-              </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-left text-destructive hover:text-destructive"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="mr-2 h-4 w-4" size={16} />
+                  Cerrar Sesión
+                </Button>
+              </div>
             </div>
           </div>
-        )
-      }
-    </>
-  )
+        </div>
+      )}
+      </>
+    )
 }
