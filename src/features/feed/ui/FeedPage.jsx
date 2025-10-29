@@ -23,6 +23,7 @@ export const FeedPage = () => {
     toggleSave,
     applyToJob,
     updateFilter,
+    resetFilters,
     searchJobs,
     loadMoreJobs,
   } = useFeedController()
@@ -60,9 +61,8 @@ export const FeedPage = () => {
           <aside className="hidden lg:block lg:col-span-3">
             <FeedFilters
               filters={filters}
-              onFilterChange={updateFilter}
-              trendingSkills={trendingSkills}
-              onSkillClick={handleSkillClick}
+              updateFilter={updateFilter}
+              resetFilters={resetFilters}
             />
           </aside>
 
