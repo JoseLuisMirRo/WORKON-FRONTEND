@@ -27,10 +27,9 @@ export const Footer = () => {
           {/* Brand */}
           <div>
             <div className="mb-4 flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <Wallet className="h-5 w-5 text-primary-foreground" size={20} />
+              <div className="flex h-15 w-15 items-center justify-center">
+                <img src='/Workon-Logo.png' alt='workOn-logo' className='object-contain' />
               </div>
-              <span className="text-lg font-bold">WorkOn</span>
             </div>
             <p className="text-sm text-muted-foreground">
               Powered by Stellar
