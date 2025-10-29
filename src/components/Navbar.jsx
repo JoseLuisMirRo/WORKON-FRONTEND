@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from './ui/DropdownMenu'
 import { Badge } from './ui/Badge'
-import { User, Wallet, LogOut, Settings, Menu, X } from './ui/Icons'
+import { Bell, User, Wallet, LogOut, Settings, Menu, X } from './ui/Icons'
 import { LogoIcon } from './Logo'
 import { cn } from '../lib/utils'
 
@@ -216,15 +216,6 @@ export function Navbar() {
               </Link>
 
               <div className="border-t border-border pt-3 mt-3" />
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="relative group ">
-            <Link to="/tokens">
-              <Wallet className="h-5 w-5 group-hover:text-accent transition-colors" size={20} />
-              <span className="hidden sm:inline font-semibold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-                
-              </span>
-            </Link>
-          </Button>
 
               {/* Información del usuario */}
               <div className="px-3 py-2">
