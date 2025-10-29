@@ -1,31 +1,5 @@
-// Mock data y servicios de autenticación
-
-// Usuarios mock para desarrollo
-const mockUsers = [
-  {
-    id: '1',
-    email: 'freelancer@workon.com',
-    password: 'password123',
-    type: 'freelancer',
-    profile: {
-      name: 'Ana García',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ana'
-    }
-  },
-  {
-    id: '2',
-    email: 'empleador@workon.com',
-    password: 'password123',
-    type: 'employer',
-    profile: {
-      name: 'TechCorp SA',
-      avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=TechCorp'
-    }
-  }
-]
-
-// Simular delay de red
-const delay = (ms = 800) => new Promise(resolve => setTimeout(resolve, ms))
+// Servicio de autenticación con Supabase
+import { supabase } from '../../../lib/supabaseClient'
 
 /**
  * Iniciar sesión
@@ -34,30 +8,45 @@ const delay = (ms = 800) => new Promise(resolve => setTimeout(resolve, ms))
  * @returns {Promise<Object>} Usuario autenticado
  */
 export const login = async (email, password) => {
-  await delay()
-  
-  const user = mockUsers.find(u => u.email === email && u.password === password)
-  
-  if (!user) {
-    throw new Error('Credenciales inválidas')
-  }
-  
-  // Simular token JWT
-  const token = `mock-jwt-token-${user.id}-${Date.now()}`
-  
-  // Guardar en localStorage
-  localStorage.setItem('authToken', token)
-  localStorage.setItem('userId', user.id)
-  localStorage.setItem('userType', user.type)
-  
-  return {
-    user: {
-      id: user.id,
-      email: user.email,
-      type: user.type,
-      profile: user.profile
-    },
-    token
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) throw error
+
+    // Obtener el perfil del usuario desde la tabla profiles
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .single()
+
+    if (profileError && profileError.code !== 'PGRST116') {
+      console.warn('No se pudo obtener el perfil:', profileError)
+    }
+
+    // Guardar información en localStorage para compatibilidad
+    localStorage.setItem('authToken', data.session.access_token)
+    localStorage.setItem('userId', data.user.id)
+    localStorage.setItem('userType', profile?.user_type || 'freelancer')
+
+    return {
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        type: profile?.user_type || 'freelancer',
+        profile: profile || {
+          name: data.user.user_metadata?.name || data.user.email,
+          avatar: data.user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.email}`,
+        },
+      },
+      token: data.session.access_token,
+    }
+  } catch (error) {
+    console.error('Error en login:', error)
+    throw new Error(error.message || 'Error al iniciar sesión')
   }
 }
 
@@ -67,45 +56,60 @@ export const login = async (email, password) => {
  * @returns {Promise<Object>} Usuario registrado
  */
 export const register = async (userData) => {
-  await delay()
-  
-  // Verificar si el email ya existe
-  const existingUser = mockUsers.find(u => u.email === userData.email)
-  if (existingUser) {
-    throw new Error('El email ya está registrado')
-  }
-  
-  // Crear nuevo usuario
-  const newUser = {
-    id: `${Date.now()}`,
-    email: userData.email,
-    password: userData.password,
-    type: userData.type,
-    profile: {
-      name: userData.name,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.name}`
+  try {
+    // Registrar usuario en Supabase Auth
+    const { data, error } = await supabase.auth.signUp({
+      email: userData.email,
+      password: userData.password,
+      options: {
+        data: {
+          name: userData.name,
+          user_type: userData.type,
+        },
+      },
+    })
+
+    if (error) throw error
+
+    // Crear perfil en la tabla profiles
+    if (data.user) {
+      const { error: profileError } = await supabase.from('profiles').insert([
+        {
+          id: data.user.id,
+          email: userData.email,
+          name: userData.name,
+          user_type: userData.type,
+          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.name}`,
+        },
+      ])
+
+      if (profileError) {
+        console.error('Error al crear perfil:', profileError)
+      }
     }
-  }
-  
-  // En un sistema real, esto se guardaría en la BD
-  mockUsers.push(newUser)
-  
-  // Simular token JWT
-  const token = `mock-jwt-token-${newUser.id}-${Date.now()}`
-  
-  // Guardar en localStorage
-  localStorage.setItem('authToken', token)
-  localStorage.setItem('userId', newUser.id)
-  localStorage.setItem('userType', newUser.type)
-  
-  return {
-    user: {
-      id: newUser.id,
-      email: newUser.email,
-      type: newUser.type,
-      profile: newUser.profile
-    },
-    token
+
+    // Guardar información en localStorage
+    if (data.session) {
+      localStorage.setItem('authToken', data.session.access_token)
+      localStorage.setItem('userId', data.user.id)
+      localStorage.setItem('userType', userData.type)
+    }
+
+    return {
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        type: userData.type,
+        profile: {
+          name: userData.name,
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.name}`,
+        },
+      },
+      token: data.session?.access_token,
+    }
+  } catch (error) {
+    console.error('Error en register:', error)
+    throw new Error(error.message || 'Error al registrar usuario')
   }
 }
 
@@ -114,11 +118,17 @@ export const register = async (userData) => {
  * @returns {Promise<void>}
  */
 export const logout = async () => {
-  await delay(300)
-  
-  localStorage.removeItem('authToken')
-  localStorage.removeItem('userId')
-  localStorage.removeItem('userType')
+  try {
+    const { error } = await supabase.auth.signOut()
+    if (error) throw error
+
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('userId')
+    localStorage.removeItem('userType')
+  } catch (error) {
+    console.error('Error en logout:', error)
+    throw new Error(error.message || 'Error al cerrar sesión')
+  }
 }
 
 /**
@@ -126,43 +136,54 @@ export const logout = async () => {
  * @returns {Promise<Object|null>} Usuario autenticado o null
  */
 export const getCurrentUser = async () => {
-  await delay(300)
-  
-  const token = localStorage.getItem('authToken')
-  const userId = localStorage.getItem('userId')
-  const userType = localStorage.getItem('userType')
-  
-  if (!token || !userId) {
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser()
+
+    if (error || !user) return null
+
+    // Obtener el perfil del usuario
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError && profileError.code !== 'PGRST116') {
+      console.warn('No se pudo obtener el perfil:', profileError)
+    }
+
+    // Obtener la sesión actual
+    const { data: { session } } = await supabase.auth.getSession()
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        type: profile?.user_type || localStorage.getItem('userType') || 'freelancer',
+        profile: profile || {
+          name: user.user_metadata?.name || user.email,
+          avatar: user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`,
+        },
+      },
+      token: session?.access_token,
+    }
+  } catch (error) {
+    console.error('Error al obtener usuario actual:', error)
     return null
-  }
-  
-  const user = mockUsers.find(u => u.id === userId)
-  
-  if (!user) {
-    return null
-  }
-  
-  return {
-    user: {
-      id: user.id,
-      email: user.email,
-      type: userType,
-      profile: user.profile
-    },
-    token
   }
 }
 
 /**
  * Verificar si el usuario está autenticado
- * @returns {boolean}
+ * @returns {Promise<boolean>}
  */
-export const isAuthenticated = () => {
-  return !!localStorage.getItem('authToken')
+export const isAuthenticated = async () => {
+  const { data: { session } } = await supabase.auth.getSession()
+  return !!session
 }
 
 /**
- * Obtener tipo de usuario
+ * Obtener tipo de usuario (síncrono para compatibilidad)
  * @returns {string|null}
  */
 export const getUserType = () => {
@@ -172,22 +193,66 @@ export const getUserType = () => {
 /**
  * Restablecer contraseña
  * @param {string} email - Email del usuario
- * @returns {Promise<void>}
+ * @returns {Promise<Object>}
  */
 export const resetPassword = async (email) => {
-  await delay()
-  
-  const user = mockUsers.find(u => u.email === email)
-  
-  if (!user) {
-    throw new Error('No existe una cuenta con ese email')
-  }
-  
-  // En un sistema real, aquí se enviaría un email
-  console.log(`Email de recuperación enviado a: ${email}`)
-  
-  return {
-    message: 'Se ha enviado un enlace de recuperación a tu email'
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+
+    if (error) throw error
+
+    return {
+      message: 'Se ha enviado un enlace de recuperación a tu email',
+    }
+  } catch (error) {
+    console.error('Error en resetPassword:', error)
+    throw new Error(error.message || 'Error al restablecer contraseña')
   }
 }
 
+/**
+ * Actualizar contraseña
+ * @param {string} newPassword - Nueva contraseña
+ * @returns {Promise<Object>}
+ */
+export const updatePassword = async (newPassword) => {
+  try {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    })
+
+    if (error) throw error
+
+    return {
+      message: 'Contraseña actualizada exitosamente',
+    }
+  } catch (error) {
+    console.error('Error al actualizar contraseña:', error)
+    throw new Error(error.message || 'Error al actualizar contraseña')
+  }
+}
+
+/**
+ * Iniciar sesión con proveedor OAuth (Google, GitHub, etc.)
+ * @param {string} provider - Nombre del proveedor ('google', 'github', etc.)
+ * @returns {Promise<Object>}
+ */
+export const signInWithProvider = async (provider) => {
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+
+    if (error) throw error
+
+    return data
+  } catch (error) {
+    console.error('Error en signInWithProvider:', error)
+    throw new Error(error.message || 'Error al iniciar sesión con proveedor')
+  }
+}
