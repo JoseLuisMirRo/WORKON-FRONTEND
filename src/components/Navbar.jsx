@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from './ui/Button'
 import { Avatar, AvatarImage, AvatarFallback } from './ui/Avatar'
 import {
@@ -14,11 +14,14 @@ import { Badge } from './ui/Badge'
 import { Bell, User, Wallet, LogOut, Settings, Menu, X } from './ui/Icons'
 import { LogoIcon } from './Logo'
 import { cn } from '../lib/utils'
+import { useAuth } from '../contexts/AuthContext'
 import { isConnected, requestAccess, getAddress } from "@stellar/freighter-api";
 
 
 export function Navbar() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user, isAuthenticated, logout } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const isActive = (path) => location.pathname === path
@@ -26,6 +29,39 @@ export function Navbar() {
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen)
   const closeMobileMenu = () => setIsMobileMenuOpen(false)
 
+  const handleLogout = async () => {
+    await logout()
+    closeMobileMenu()
+    navigate('/login')
+  }
+
+  // Si no hay sesión, mostrar navbar simplificado
+  if (!isAuthenticated) {
+    return (
+      <nav className="sticky top-0 z-50 w-full border-b border-border/40 glass shadow-lg">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+          <Link to="/" className="flex items-center gap-2 group transition-all duration-300 hover:opacity-80">
+            <LogoIcon size={50} className="group-hover:scale-105 transition-transform" />
+          </Link>
+
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" className="border-primary/30 hover:border-primary">
+              <Link to="/login">
+                Iniciar Sesión
+              </Link>
+            </Button>
+            <Button size="sm" className="bg-gradient-to-r from-primary to-accent hover:shadow-lg">
+              <Link to="/registro">
+                Registrarse
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </nav>
+    )
+  }
+
+  // Navbar completo para usuarios autenticados
   const [walletAddress, setWalletAddress] = useState();
 
   async function connectFreighter() {
@@ -150,8 +186,10 @@ export function Navbar() {
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col gap-1">
-                      <p className="text-sm font-medium leading-none">Juan Desarrollador</p>
-                      <p className="text-xs leading-none text-muted-foreground">juan@ejemplo.com</p>
+                      <p className="text-sm font-medium leading-none">
+                        {user?.profile?.firstName ? `${user.profile.firstName} ${user.profile.lastName}` : 'Usuario'}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">{user?.email || 'usuario@ejemplo.com'}</p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -174,7 +212,10 @@ export function Navbar() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive">
+                  <DropdownMenuItem
+                    className="cursor-pointer text-destructive focus:text-destructive"
+                    onClick={handleLogout}
+                  >
                     <LogOut className="mr-2 h-4 w-4" size={16} />
                     <span>Cerrar Sesión</span>
                   </DropdownMenuItem>
@@ -200,17 +241,55 @@ export function Navbar() {
       </nav >
 
       {/* Menú Móvil */}
-      {
-        isMobileMenuOpen && (
-          <div className="fixed inset-0 top-16 z-40 md:hidden">
-            {/* Overlay */}
-            <button
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
-              onClick={closeMobileMenu}
-              onKeyDown={(e) => e.key === 'Escape' && closeMobileMenu()}
-              aria-label="Cerrar menú"
-              type="button"
-            />
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 top-16 z-40 md:hidden">
+          {/* Overlay */}
+          <button
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
+            onClick={closeMobileMenu}
+            onKeyDown={(e) => e.key === 'Escape' && closeMobileMenu()}
+            aria-label="Cerrar menú"
+            type="button"
+          />
+
+          {/* Menú */}
+          <div className="relative bg-background border-b border-border shadow-lg animate-in slide-in-from-top duration-200">
+            <div className="container mx-auto px-4 py-4 space-y-3">
+              {/* Enlaces de navegación */}
+              <Link to="/feed" onClick={closeMobileMenu}>
+                <Button
+                  variant={isActive('/feed') ? 'default' : 'ghost'}
+                  className="w-full justify-start text-left"
+                >
+                  Feed
+                </Button>
+              </Link>
+
+              <Link to="/mis-trabajos" onClick={closeMobileMenu}>
+                <Button
+                  variant={isActive('/mis-trabajos') ? 'default' : 'ghost'}
+                  className="w-full justify-start text-left"
+                >
+                  Mis Trabajos
+                </Button>
+              </Link>
+
+              <Link to="/mensajes" onClick={closeMobileMenu}>
+                <Button
+                  variant={isActive('/mensajes') ? 'default' : 'ghost'}
+                  className="w-full justify-start text-left relative"
+                >
+                  <span className="flex items-center gap-2">
+                    Mensajes
+                    <Badge
+                      variant="destructive"
+                      className="h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]"
+                    >
+                      3
+                    </Badge>
+                  </span>
+                </Button>
+              </Link>
 
             {/* Menú */}
             <div className="relative bg-background border-b border-border shadow-lg animate-in slide-in-from-top duration-200">
@@ -225,47 +304,20 @@ export function Navbar() {
                   </Button>
                 </Link>
 
-                <Link to="/mis-trabajos" onClick={closeMobileMenu}>
-                  <Button
-                    variant={isActive('/mis-trabajos') ? 'default' : 'ghost'}
-                    className="w-full justify-start text-left"
-                  >
-                    Mis Trabajos
-                  </Button>
-                </Link>
-
-                <Link to="/mensajes" onClick={closeMobileMenu}>
-                  <Button
-                    variant={isActive('/mensajes') ? 'default' : 'ghost'}
-                    className="w-full justify-start text-left relative"
-                  >
-                    <span className="flex items-center gap-2">
-                      Mensajes
-                      <Badge
-                        variant="destructive"
-                        className="h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]"
-                      >
-                        3
-                      </Badge>
-                    </span>
-                  </Button>
-                </Link>
-
-                <div className="border-t border-border pt-3 mt-3" />
-
-                {/* Información del usuario */}
-                <div className="px-3 py-2">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Avatar className="h-12 w-12 ring-2 ring-primary/20">
-                      <AvatarImage src="/placeholder.svg?height=48&width=48" alt="Usuario" />
-                      <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold">
-                        JD
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium">Juan Desarrollador</p>
-                      <p className="text-xs text-muted-foreground">juan@ejemplo.com</p>
-                    </div>
+              {/* Información del usuario */}
+              <div className="px-3 py-2">
+                <div className="flex items-center gap-3 mb-3">
+                  <Avatar className="h-12 w-12 ring-2 ring-primary/20">
+                    <AvatarImage src="/placeholder.svg?height=48&width=48" alt="Usuario" />
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold">
+                      {user?.profile?.firstName?.[0] || 'U'}{user?.profile?.lastName?.[0] || 'S'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-sm font-medium">
+                      {user?.profile?.firstName ? `${user.profile.firstName} ${user.profile.lastName}` : 'Usuario'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{user?.email || 'usuario@ejemplo.com'}</p>
                   </div>
                 </div>
 
@@ -298,15 +350,14 @@ export function Navbar() {
 
                 <div className="border-t border-border pt-3 mt-3" />
 
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-left text-destructive hover:text-destructive"
-                  onClick={closeMobileMenu}
-                >
-                  <LogOut className="mr-2 h-4 w-4" size={16} />
-                  Cerrar Sesión
-                </Button>
-              </div>
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-left text-destructive hover:text-destructive"
+                onClick={handleLogout}
+              >
+                <LogOut className="mr-2 h-4 w-4" size={16} />
+                Cerrar Sesión
+              </Button>
             </div>
           </div>
         )

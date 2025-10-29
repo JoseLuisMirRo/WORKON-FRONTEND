@@ -5,12 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Badge } from '../../../components/ui/Badge'
 import { CheckCircle2, AlertCircle, User, Briefcase } from '../../../components/ui/Icons'
 import { Logo } from '../../../components/Logo'
-import { useAuthController } from '../controllers/useAuthController'
+import { useAuth } from '../../../contexts/AuthContext'
 
 export const RegisterPage = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { handleRegister, loading, error } = useAuthController()
+  const { register: registerUser } = useAuth()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
   
   const [userType, setUserType] = useState(searchParams.get('type') || 'freelancer')
   const [formData, setFormData] = useState({
@@ -68,7 +70,9 @@ export const RegisterPage = () => {
     }
 
     try {
-      const result = await handleRegister({
+      setLoading(true)
+      setError(null)
+      const result = await registerUser({
         name: formData.name,
         email: formData.email,
         password: formData.password,
@@ -82,7 +86,10 @@ export const RegisterPage = () => {
         navigate('/crear-perfil-freelancer')
       }
     } catch (err) {
+      setError(err.message || 'Error al registrarse')
       console.error('Register error:', err)
+    } finally {
+      setLoading(false)
     }
   }
 
