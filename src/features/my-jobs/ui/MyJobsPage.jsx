@@ -1,8 +1,9 @@
-import { Navbar } from '../../../components/Navbar'
+import { useState } from 'react'
 import { Button } from '../../../components/ui/Button'
 import { useMyJobsController } from '../controllers/useMyJobsController'
 import { MyJobCard } from './MyJobCard'
 import { JobStats } from './JobStats'
+import { JobDetailsModal } from './JobDetailsModal'
 
 export const MyJobsPage = () => {
   const {
@@ -14,27 +15,31 @@ export const MyJobsPage = () => {
     toggleDeliverable,
   } = useMyJobsController()
 
+  const [selectedJob, setSelectedJob] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleViewDetails = (job) => {
+    setSelectedJob(job)
+    setIsModalOpen(true)
+  }
+
   const filters = [
     { value: 'all', label: 'Todos' },
-    { value: 'applied', label: 'Aplicados' },
-    { value: 'in_progress', label: 'En Progreso' },
-    { value: 'completed', label: 'Completados' },
+    { value: 'en-progreso', label: 'En Progreso' },
+    { value: 'revision', label: 'En Revisión' },
+    { value: 'completado', label: 'Completados' },
   ]
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-        </div>
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
+    <div className="bg-background">
 
       <div className="container mx-auto py-8 px-4">
         <div className="mb-8">
@@ -75,11 +80,19 @@ export const MyJobsPage = () => {
                 key={job.id}
                 job={job}
                 onToggleDeliverable={toggleDeliverable}
+                onViewDetails={handleViewDetails}
               />
             ))
           )}
         </div>
       </div>
+
+      {/* Modal de detalles */}
+      <JobDetailsModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        job={selectedJob}
+      />
     </div>
   )
 }

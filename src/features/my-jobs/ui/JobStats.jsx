@@ -2,32 +2,40 @@ import { Card, CardContent } from '../../../components/ui/Card'
 import { TrendingUp, CheckCircle2, Clock, DollarSign } from '../../../components/ui/Icons'
 
 export function JobStats({ stats }) {
+  // Validar que stats existe y tiene valores por defecto
+  const safeStats = {
+    inProgress: stats?.inProgress || 0,
+    completed: stats?.completed || 0,
+    inReview: stats?.inReview || 0,
+    monthlyEarnings: stats?.monthlyEarnings || 0
+  }
+
   const statItems = [
     {
       icon: TrendingUp,
       label: 'En Progreso',
-      value: stats.inProgress,
+      value: safeStats.inProgress,
       gradient: 'from-primary to-primary/80',
       shadowColor: 'shadow-primary/30'
     },
     {
       icon: CheckCircle2,
       label: 'Completados',
-      value: stats.completed,
+      value: safeStats.completed,
       gradient: 'from-accent to-accent/80',
       shadowColor: 'shadow-accent/30'
     },
     {
       icon: Clock,
       label: 'En Revisión',
-      value: stats.inReview,
+      value: safeStats.inReview,
       gradient: 'from-warning to-warning/80',
       shadowColor: 'shadow-warning/30'
     },
     {
       icon: DollarSign,
       label: 'Ganado este mes',
-      value: `$${stats.monthlyEarnings.toLocaleString()}`,
+      value: `$${safeStats.monthlyEarnings.toLocaleString()}`,
       gradient: 'from-success to-success/80',
       shadowColor: 'shadow-success/30'
     }
