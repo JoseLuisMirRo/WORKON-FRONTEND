@@ -7,6 +7,7 @@ import { MessagesPage } from './features/messages'
 import { EmployerDashboard } from './features/employer'
 import { CreateFreelancerProfile, CreateEmployerProfile } from './features/profile'
 import { LoginPage, RegisterPage } from './features/auth'
+import { FreelancerProfilePage } from './features/profile'
 
 function App() {
   return (
@@ -80,6 +81,12 @@ function App() {
             <>
               <Navbar />
               <CreateEmployerProfile />
+            </>
+          } />
+          <Route path="/perfil-freelancer" element={
+            <>
+              <Navbar />
+              <FreelancerProfilePage />
             </>
           } />
         </Routes>

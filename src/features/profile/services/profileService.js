@@ -35,7 +35,8 @@ const mockFreelancerProfile = {
       location: "Remote",
       startDate: "2021-03",
       endDate: "Presente",
-      description: "Desarrollo de aplicaciones web y móviles utilizando React, Node.js y tecnologías blockchain."
+      description: "Desarrollo de aplicaciones web y móviles utilizando React, Node.js y tecnologías blockchain. Lideré un equipo de 5 desarrolladores en la implementación de soluciones DeFi en Stellar. Implementé arquitecturas escalables que mejoraron el rendimiento en un 60%.",
+      skills: ["React", "Node.js", "Stellar", "Smart Contracts", "TypeScript", "MongoDB"]
     },
     {
       id: 2,
@@ -44,7 +45,8 @@ const mockFreelancerProfile = {
       location: "Ciudad de México",
       startDate: "2019-06",
       endDate: "2021-02",
-      description: "Desarrollo de plataforma de e-commerce con integración de pagos."
+      description: "Desarrollo de plataforma de e-commerce con integración de pagos. Implementé sistema de pagos con Stripe y PayPal, creé API RESTful para el backend y desarrollé el frontend con React.",
+      skills: ["React", "Node.js", "Express", "PostgreSQL", "Stripe", "AWS"]
     }
   ],
   education: [
@@ -93,6 +95,16 @@ const mockFreelancerProfile = {
     linkedin: "https://linkedin.com/in/juandev",
     twitter: "https://twitter.com/juandev",
     website: "https://juandev.com"
+  },
+  workInterests: {
+    categories: ['Desarrollo Web', 'Blockchain', 'Smart Contracts', 'DApps'],
+    projectTypes: ['Proyecto Completo', 'Consultoría', 'Soporte Técnico'],
+    workArrangement: ['Remoto', 'Tiempo Completo', 'Tiempo Parcial'],
+    preferredIndustries: ['Fintech', 'Tecnología', 'Startups', 'Criptomonedas'],
+    projectSize: 'Mediano a Grande',
+    budgetRange: '$5,000 - $20,000',
+    availability: '40 hrs/semana',
+    commitment: 'Largo plazo preferido'
   },
   stats: {
     rating: 4.9,
