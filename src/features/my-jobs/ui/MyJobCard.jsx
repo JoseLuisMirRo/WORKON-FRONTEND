@@ -1,136 +1,127 @@
 import { Card, CardHeader, CardContent } from '../../../components/ui/Card'
 import { Badge } from '../../../components/ui/Badge'
-import { Avatar, AvatarImage, AvatarFallback } from '../../../components/ui/Avatar'
 import { Button } from '../../../components/ui/Button'
-import { Separator } from '../../../components/ui/Separator'
-import { Briefcase, Calendar, DollarSign, MessageCircle, CheckCircle2 } from '../../../components/ui/Icons'
-import { statusLabels } from '../services/myJobsService'
+import { Avatar, AvatarImage, AvatarFallback } from '../../../components/ui/Avatar'
+import { Calendar, Wallet, MessageCircle, Clock } from '../../../components/ui/Icons'
 
-const statusColors = {
-  applied: 'secondary',
-  in_progress: 'default',
-  completed: 'outline',
-  cancelled: 'destructive',
-}
+export function MyJobCard({ job }) {
+  const getStatusColor = (status) => {
+    const colors = {
+      'en-progreso': 'default',
+      'completado': 'success',
+      'revision': 'warning',
+      'cancelado': 'destructive'
+    }
+    return colors[status] || 'default'
+  }
 
-export const MyJobCard = ({ job, onToggleDeliverable }) => {
+  const getStatusLabel = (status) => {
+    const labels = {
+      'en-progreso': '🚀 En Progreso',
+      'completado': '✅ Completado',
+      'revision': '👀 En Revisión',
+      'cancelado': '❌ Cancelado'
+    }
+    return labels[status] || status
+  }
+
+  const getProgressColor = (progress) => {
+    if (progress >= 75) return 'bg-gradient-to-r from-accent to-accent/80'
+    if (progress >= 50) return 'bg-gradient-to-r from-primary to-primary/80'
+    if (progress >= 25) return 'bg-gradient-to-r from-warning to-warning/80'
+    return 'bg-gradient-to-r from-muted to-muted/80'
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-start gap-4">
-          <Avatar className="h-12 w-12 border-2 border-border">
-            <AvatarImage src={job.companyLogo} alt={job.company} />
-            <AvatarFallback>{job.company[0]}</AvatarFallback>
-          </Avatar>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-lg">{job.title}</h3>
-                <p className="text-sm text-muted-foreground">{job.company}</p>
-              </div>
-              <Badge variant={statusColors[job.status]}>
-                {statusLabels[job.status]}
-              </Badge>
-            </div>
+    <Card hover className="group">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 space-y-2">
+            <Badge variant={getStatusColor(job.status)} className="font-medium">
+              {getStatusLabel(job.status)}
+            </Badge>
+            <h3 className="text-xl font-semibold leading-tight group-hover:text-accent transition-colors">
+              {job.title}
+            </h3>
           </div>
+          <Avatar className="h-12 w-12 ring-2 ring-primary/20 group-hover:ring-accent/50 transition-all">
+            <AvatarImage src={job.client.avatar} alt={job.client.name} />
+            <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold">
+              {job.client.name.split(' ').map(n => n[0]).join('')}
+            </AvatarFallback>
+          </Avatar>
         </div>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">{job.description}</p>
-
-        {/* Skills */}
-        <div className="flex flex-wrap gap-2">
-          {job.skills.map((skill) => (
-            <Badge key={skill} variant="secondary" className="text-xs">
-              {skill}
+        {/* Cliente */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Cliente:</span>
+          <span className="text-sm font-medium">{job.client.name}</span>
+          {job.client.verified && (
+            <Badge variant="accent" className="text-xs px-1.5 py-0">
+              ✓
             </Badge>
-          ))}
+          )}
         </div>
 
-        {/* Progress bar for in_progress jobs */}
-        {job.status === 'in_progress' && (
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Progreso</span>
-              <span className="text-sm text-muted-foreground">{job.progress}%</span>
+        {/* Progreso */}
+        {job.status === 'en-progreso' && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Progreso</span>
+              <span className="font-semibold">{job.progress}%</span>
             </div>
-            <div className="w-full bg-muted rounded-full h-2">
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
               <div 
-                className="bg-primary h-2 rounded-full transition-all" 
+                className={`h-full ${getProgressColor(job.progress)} transition-all duration-500 shadow-lg`}
                 style={{ width: `${job.progress}%` }}
               />
             </div>
           </div>
         )}
 
-        {/* Deliverables for in_progress jobs */}
-        {job.status === 'in_progress' && job.deliverables && (
-          <div className="space-y-2">
-            <span className="text-sm font-medium">Entregables:</span>
-            {job.deliverables.map((deliverable) => (
-              <div key={deliverable.id} className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={deliverable.completed}
-                  onChange={() => onToggleDeliverable(job.id, deliverable.id, deliverable.completed)}
-                  className="rounded border-border"
-                />
-                <span className={`text-sm ${deliverable.completed ? 'line-through text-muted-foreground' : ''}`}>
-                  {deliverable.name}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Review for completed jobs */}
-        {job.status === 'completed' && job.review && (
-          <div className="bg-muted/50 p-3 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 size={16} className="text-primary" />
-              <span className="text-sm font-medium">Calificación: {job.rating}/5 ⭐</span>
+        {/* Fechas */}
+        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border/50">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Calendar className="h-3.5 w-3.5" size={14} />
+              <span>Inicio</span>
             </div>
-            <p className="text-sm text-muted-foreground italic">&quot;{job.review}&quot;</p>
+            <p className="text-sm font-medium">{job.startDate}</p>
           </div>
-        )}
-
-        {/* Job Details */}
-        <div className="flex flex-wrap gap-4 text-sm">
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <DollarSign className="h-4 w-4 text-primary" size={16} />
-            <span className="font-semibold text-primary">{job.budget}</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Calendar className="h-4 w-4" size={16} />
-            <span>Aplicado: {new Date(job.appliedDate).toLocaleDateString('es')}</span>
-          </div>
-          {job.deadline && (
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Briefcase className="h-4 w-4" size={16} />
-              <span>Entrega: {new Date(job.deadline).toLocaleDateString('es')}</span>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Clock className="h-3.5 w-3.5" size={14} />
+              <span>{job.status === 'completado' ? 'Finalizado' : 'Entrega'}</span>
             </div>
-          )}
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <MessageCircle className="h-4 w-4" size={16} />
-            <span>{job.messages} mensajes</span>
+            <p className="text-sm font-medium">{job.deadline}</p>
           </div>
         </div>
 
-        <Separator />
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-3 border-t border-border/50">
+          <div className="flex items-center gap-2">
+            <Wallet className="h-5 w-5 text-accent" size={20} />
+            <span className="text-xl font-bold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+              ${job.amount.toLocaleString()} USDC
+            </span>
+          </div>
 
-        <div className="flex justify-between items-center">
-          <Button variant="outline" size="sm">
-            <MessageCircle size={16} />
-            Ver Mensajes
-          </Button>
-          <Button size="sm">
-            Ver Detalles
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="border-accent/50 hover:border-accent hover:text-accent"
+            >
+              <MessageCircle className="h-4 w-4" size={16} />
+            </Button>
+            <Button size="sm" className="shadow-lg">
+              Ver detalles
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
   )
 }
-

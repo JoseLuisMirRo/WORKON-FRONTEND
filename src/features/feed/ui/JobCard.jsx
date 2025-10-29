@@ -1,121 +1,118 @@
 import { Card, CardHeader, CardContent } from '../../../components/ui/Card'
 import { Badge } from '../../../components/ui/Badge'
-import { Avatar, AvatarImage, AvatarFallback } from '../../../components/ui/Avatar'
 import { Button } from '../../../components/ui/Button'
-import { Separator } from '../../../components/ui/Separator'
-import {
-  Briefcase,
-  MapPin,
-  DollarSign,
-  Heart,
-  MessageCircle,
-  Share2,
-  Bookmark,
-  Users,
-} from '../../../components/ui/Icons'
+import { Avatar, AvatarImage, AvatarFallback } from '../../../components/ui/Avatar'
+import { Wallet, Calendar, Star, Clock } from '../../../components/ui/Icons'
 
-export const JobCard = ({ job, isLiked, isSaved, onLike, onSave, onApply }) => {
+export function JobCard({ job }) {
+  const getBudgetColor = (budget) => {
+    if (budget >= 3000) return 'success'
+    if (budget >= 1000) return 'accent'
+    return 'default'
+  }
+
+  const getUrgencyColor = (urgency) => {
+    const colors = {
+      alta: 'destructive',
+      media: 'warning',
+      baja: 'secondary'
+    }
+    return colors[urgency] || 'default'
+  }
+
   return (
-    <Card hover className="transition-all">
-      <CardHeader>
-        <div className="flex items-start gap-4">
-          <Avatar className="h-12 w-12 border-2 border-border">
-            <AvatarImage src={job.companyLogo} alt={job.company} />
-            <AvatarFallback>{job.company[0]}</AvatarFallback>
-          </Avatar>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-foreground">{job.company}</h3>
-                  {job.verified && (
-                    <Badge variant="outline" className="text-xs">
-                      Verificada
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">{job.companySize}</p>
-                <p className="text-xs text-muted-foreground">{job.timePosted}</p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={isSaved ? "text-primary" : ""}
-                onClick={() => onSave(job.id)}
-              >
-                <Bookmark size={20} filled={isSaved} />
-              </Button>
+    <Card hover className="group animate-slide-up">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant={getUrgencyColor(job.urgency)} className="font-medium">
+                {job.urgency === 'alta' ? '🔥' : job.urgency === 'media' ? '⚡' : '📅'} {job.urgency.toUpperCase()}
+              </Badge>
+              <Badge variant="outline" className="text-xs">
+                {job.category}
+              </Badge>
             </div>
+            <h3 className="text-xl font-semibold leading-tight group-hover:text-accent transition-colors">
+              {job.title}
+            </h3>
           </div>
+          <Avatar className="h-10 w-10 ring-2 ring-primary/20 group-hover:ring-accent/50 transition-all">
+            <AvatarImage src={job.client.avatar} alt={job.client.name} />
+            <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-sm font-bold">
+              {job.client.name.split(' ').map(n => n[0]).join('')}
+            </AvatarFallback>
+          </Avatar>
         </div>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Job Title & Description */}
-        <div>
-          <h2 className="mb-2 text-xl font-bold text-foreground">{job.title}</h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">{job.description}</p>
-        </div>
+        {/* Descripción */}
+        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+          {job.description}
+        </p>
 
         {/* Skills */}
         <div className="flex flex-wrap gap-2">
-          {job.skills.map((skill) => (
-            <Badge key={skill} variant="secondary" className="text-xs">
+          {job.skills.slice(0, 4).map((skill, index) => (
+            <Badge 
+              key={index} 
+              variant="secondary" 
+              className="text-xs bg-secondary/30 hover:bg-secondary/50 border border-secondary/50"
+            >
               {skill}
             </Badge>
           ))}
+          {job.skills.length > 4 && (
+            <Badge variant="secondary" className="text-xs">
+              +{job.skills.length - 4}
+            </Badge>
+          )}
         </div>
 
-        {/* Job Details */}
-        <div className="flex flex-wrap gap-4 text-sm">
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <DollarSign className="h-4 w-4 text-primary" size={16} />
-            <span className="font-semibold text-primary">{job.budget}</span>
-            <span>• {job.budgetType}</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <MapPin className="h-4 w-4" size={16} />
-            <span>{job.location}</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Briefcase className="h-4 w-4" size={16} />
-            <span>{job.category}</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Users className="h-4 w-4" size={16} />
-            <span>{job.applicants} aplicantes</span>
+        {/* Info del cliente */}
+        <div className="flex items-center gap-2 pt-2 border-t border-border/50">
+          <span className="text-sm font-medium">{job.client.name}</span>
+          {job.client.verified && (
+            <Badge variant="accent" className="text-xs px-1.5 py-0">
+              ✓
+            </Badge>
+          )}
+          <div className="flex items-center gap-1 ml-auto">
+            <Star className="h-3.5 w-3.5 fill-accent text-accent" size={14} />
+            <span className="text-sm font-medium">{job.client.rating}</span>
+            <span className="text-xs text-muted-foreground">({job.client.reviews})</span>
           </div>
         </div>
 
-        <Separator />
+        {/* Footer con presupuesto y acciones */}
+        <div className="flex items-center justify-between pt-3 border-t border-border/50">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Wallet className="h-4 w-4 text-accent" size={16} />
+              <span className="text-lg font-bold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+                ${job.budget.toLocaleString()} USDC
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" size={12} />
+              <span>Publicado hace {job.postedTime}</span>
+            </div>
+          </div>
 
-        {/* Engagement Actions */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`gap-2 ${isLiked ? "text-red-500" : ""}`}
-              onClick={() => onLike(job.id)}
+          <Button 
+            size="sm" 
+            className="group/btn shadow-lg"
+          >
+            Aplicar
+            <svg 
+              className="h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
             >
-              <Heart size={16} filled={isLiked} />
-              <span>{job.likes}</span>
-            </Button>
-
-            <Button variant="ghost" size="sm" className="gap-2">
-              <MessageCircle size={16} />
-              <span>{job.comments}</span>
-            </Button>
-
-            <Button variant="ghost" size="sm" className="gap-2">
-              <Share2 size={16} />
-              <span>Compartir</span>
-            </Button>
-          </div>
-
-          <Button onClick={() => onApply(job.id)}>
-            Aplicar Ahora
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </Button>
         </div>
       </CardContent>

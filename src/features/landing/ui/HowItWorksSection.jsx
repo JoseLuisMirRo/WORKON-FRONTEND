@@ -1,42 +1,79 @@
+import { Card, CardContent } from '../../../components/ui/Card'
+import { CheckCircle2 } from '../../../components/ui/Icons'
+
 const steps = [
   {
-    number: 1,
-    title: 'Conecta tu Wallet',
-    description: 'Usa tu wallet de Stellar para crear tu cuenta de forma segura y descentralizada',
-    color: 'primary',
+    number: '01',
+    title: 'Crea tu perfil',
+    description: 'Conecta tu wallet de Stellar y completa tu perfil profesional en minutos.',
   },
   {
-    number: 2,
-    title: 'Publica o Aplica',
-    description: 'Empleadores publican trabajos, freelancers aplican y son seleccionados',
-    color: 'accent',
+    number: '02',
+    title: 'Encuentra proyectos',
+    description: 'Explora cientos de proyectos o recibe invitaciones directas de clientes.',
   },
   {
-    number: 3,
-    title: 'Trabaja y Cobra',
-    description: 'Completa entregas, recibe aprobaciones y los tokens se liberan automáticamente',
-    color: 'success',
+    number: '03',
+    title: 'Trabaja seguro',
+    description: 'Los fondos se bloquean en un contrato inteligente hasta completar el trabajo.',
+  },
+  {
+    number: '04',
+    title: 'Recibe tu pago',
+    description: 'Una vez aprobado, recibe el pago instantáneamente en tu wallet.',
   },
 ]
 
-export const HowItWorksSection = () => {
+export function HowItWorksSection() {
   return (
-    <section className="border-y border-border bg-muted/30 py-24">
+    <section className="py-20 md:py-32 relative overflow-hidden">
+      {/* Fondo decorativo */}
+      <div className="absolute inset-0 -z-10">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-96 w-full max-w-5xl rounded-full bg-primary/5 blur-3xl"></div>
+      </div>
+
       <div className="container mx-auto px-4">
-        <div className="mb-16 text-center">
-          <h2 className="mb-4 text-3xl font-bold tracking-tight">¿Cómo funciona?</h2>
-          <p className="text-lg text-muted-foreground">Tres simples pasos para empezar</p>
+        <div className="mx-auto max-w-2xl text-center mb-16 space-y-4">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              Cómo funciona
+            </span>
+          </h2>
+          <p className="text-lg text-muted-foreground">
+            Comienza a trabajar en 4 simples pasos
+          </p>
         </div>
 
-        <div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-3">
-          {steps.map((step) => (
-            <div key={step.number} className="relative">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-2xl font-bold text-primary-foreground">
-                {step.number}
-              </div>
-              <h3 className="mb-2 text-xl font-semibold">{step.title}</h3>
-              <p className="text-muted-foreground leading-relaxed">{step.description}</p>
-            </div>
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+          {steps.map((step, index) => (
+            <Card 
+              key={index} 
+              hover
+              className="relative animate-slide-up"
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
+              <CardContent className="p-6 space-y-4">
+                {/* Número con gradiente */}
+                <div className="flex items-start justify-between">
+                  <span className="text-6xl font-bold bg-gradient-to-br from-primary to-accent bg-clip-text text-transparent opacity-30">
+                    {step.number}
+                  </span>
+                  <CheckCircle2 className="h-6 w-6 text-accent" size={24} />
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold">{step.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {step.description}
+                  </p>
+                </div>
+              </CardContent>
+              
+              {/* Conector entre cards (oculto en el último) */}
+              {index < steps.length - 1 && (
+                <div className="hidden lg:block absolute top-1/2 -right-4 w-8 h-0.5 bg-gradient-to-r from-primary/50 to-transparent"></div>
+              )}
+            </Card>
           ))}
         </div>
       </div>

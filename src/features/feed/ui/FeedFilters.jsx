@@ -1,122 +1,90 @@
-import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card'
+import { Button } from '../../../components/ui/Button'
 import { Badge } from '../../../components/ui/Badge'
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../../../components/ui/Select'
-import { Separator } from '../../../components/ui/Separator'
-import { TrendingUp } from '../../../components/ui/Icons'
+import { SlidersHorizontal } from '../../../components/ui/Icons'
 
-export const FeedFilters = ({ 
-  filters, 
-  onFilterChange, 
-  trendingSkills,
-  onSkillClick 
-}) => {
+export function FeedFilters({ filters, onChange }) {
+  const categories = ['Todos', 'Desarrollo', 'Diseño', 'Marketing', 'Contenido']
+  const budgetRanges = [
+    { label: 'Todos', value: 'all' },
+    { label: '< $500', value: '0-500' },
+    { label: '$500 - $2000', value: '500-2000' },
+    { label: '> $2000', value: '2000+' }
+  ]
+
   return (
-    <div className="space-y-6 sticky top-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Categoría</label>
-            <Select 
-              value={filters.category} 
-              onValueChange={(value) => onFilterChange('category', value)}
-              defaultValue="todas"
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          <SlidersHorizontal className="h-5 w-5 text-accent" size={20} />
+          Filtros
+        </h3>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => onChange({ category: 'Todos', budget: 'all', urgency: 'all' })}
+          className="text-xs hover:text-accent"
+        >
+          Limpiar
+        </Button>
+      </div>
+
+      {/* Categorías */}
+      <div className="space-y-3">
+        <label className="text-sm font-medium text-muted-foreground">Categoría</label>
+        <div className="flex flex-wrap gap-2">
+          {categories.map(category => (
+            <Badge
+              key={category}
+              variant={filters.category === category ? 'default' : 'outline'}
+              className="cursor-pointer hover:scale-105 transition-transform"
+              onClick={() => onChange({ ...filters, category })}
             >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas las categorías</SelectItem>
-                <SelectItem value="desarrollo">Desarrollo Web</SelectItem>
-                <SelectItem value="diseno">Diseño</SelectItem>
-                <SelectItem value="blockchain">Blockchain</SelectItem>
-                <SelectItem value="marketing">Marketing</SelectItem>
-                <SelectItem value="data">Data Science</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+              {category}
+            </Badge>
+          ))}
+        </div>
+      </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Presupuesto</label>
-            <Select 
-              value={filters.budget} 
-              onValueChange={(value) => onFilterChange('budget', value)}
-              defaultValue="todos"
+      {/* Presupuesto */}
+      <div className="space-y-3">
+        <label className="text-sm font-medium text-muted-foreground">Presupuesto</label>
+        <div className="space-y-2">
+          {budgetRanges.map(range => (
+            <label
+              key={range.value}
+              className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:border-primary/50 hover:bg-card/50 cursor-pointer transition-all group"
             >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="0-500">0 - 500 USDC</SelectItem>
-                <SelectItem value="500-1000">500 - 1,000 USDC</SelectItem>
-                <SelectItem value="1000-2000">1,000 - 2,000 USDC</SelectItem>
-                <SelectItem value="2000+">2,000+ USDC</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Ubicación</label>
-            <Select 
-              value={filters.location} 
-              onValueChange={(value) => onFilterChange('location', value)}
-              defaultValue="todas"
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas</SelectItem>
-                <SelectItem value="remoto">Remoto</SelectItem>
-                <SelectItem value="hibrido">Híbrido</SelectItem>
-                <SelectItem value="presencial">Presencial</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-2">
-            <h3 className="text-sm font-semibold">Empresas Verificadas</h3>
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <input 
-                type="checkbox" 
-                className="rounded border-border"
-                checked={filters.verifiedOnly}
-                onChange={(e) => onFilterChange('verifiedOnly', e.target.checked)}
+              <input
+                type="radio"
+                name="budget"
+                value={range.value}
+                checked={filters.budget === range.value}
+                onChange={(e) => onChange({ ...filters, budget: e.target.value })}
+                className="h-4 w-4 text-primary focus:ring-2 focus:ring-primary"
               />
-              Solo empresas verificadas
+              <span className="text-sm group-hover:text-accent transition-colors">{range.label}</span>
             </label>
-          </div>
-        </CardContent>
-      </Card>
+          ))}
+        </div>
+      </div>
 
-      {/* Trending Skills */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp size={20} className="text-primary" />
-            Skills en Demanda
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {trendingSkills.map((skill) => (
-              <Badge 
-                key={skill} 
-                variant="secondary" 
-                className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-all"
-                onClick={() => onSkillClick && onSkillClick(skill)}
-              >
-                {skill}
-              </Badge>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Urgencia */}
+      <div className="space-y-3">
+        <label className="text-sm font-medium text-muted-foreground">Urgencia</label>
+        <div className="flex flex-wrap gap-2">
+          {['all', 'alta', 'media', 'baja'].map(urgency => (
+            <Badge
+              key={urgency}
+              variant={filters.urgency === urgency ? 'default' : 'outline'}
+              className="cursor-pointer hover:scale-105 transition-transform capitalize"
+              onClick={() => onChange({ ...filters, urgency })}
+            >
+              {urgency === 'all' ? 'Todas' : urgency}
+            </Badge>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

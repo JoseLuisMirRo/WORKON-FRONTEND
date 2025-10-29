@@ -1,59 +1,78 @@
 import { Link } from 'react-router-dom'
-import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card'
-import { Avatar, AvatarFallback } from '../../../components/ui/Avatar'
+import { Card, CardContent } from '../../../components/ui/Card'
 import { Button } from '../../../components/ui/Button'
-import { Separator } from '../../../components/ui/Separator'
+import { TrendingUp, Users, Zap } from '../../../components/ui/Icons'
 
-export const FeedStats = ({ userStats, savedJobsCount, suggestedCompanies }) => {
+export function FeedStats() {
   return (
-    <div className="space-y-6 sticky top-6">
-      {/* User Activity Stats */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Tu Actividad</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Aplicaciones enviadas</span>
-            <span className="text-lg font-bold text-primary">{userStats.applicationsSubmitted}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Trabajos guardados</span>
-            <span className="text-lg font-bold text-primary">{savedJobsCount}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Perfil visto</span>
-            <span className="text-lg font-bold text-primary">{userStats.profileViews}</span>
+    <div className="space-y-4">
+      {/* Card principal de stats */}
+      <Card className="bg-gradient-to-br from-primary/10 via-accent/10 to-primary/10 border-primary/20">
+        <CardContent className="p-6 space-y-6">
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold">Tu actividad</h3>
+            <p className="text-sm text-muted-foreground">Resumen de tu cuenta</p>
           </div>
 
-          <Separator />
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-card/50 hover:bg-card/80 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
+                  <TrendingUp className="h-5 w-5 text-white" size={20} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">8</p>
+                  <p className="text-xs text-muted-foreground">Aplicaciones activas</p>
+                </div>
+              </div>
+            </div>
 
-          <Button variant="outline" className="w-full bg-transparent" asChild>
-            <Link to="/perfil">Ver mi perfil</Link>
+            <div className="flex items-center justify-between p-3 rounded-lg bg-card/50 hover:bg-card/80 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center shadow-lg shadow-accent/30">
+                  <Zap className="h-5 w-5 text-white" size={20} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">3</p>
+                  <p className="text-xs text-muted-foreground">Proyectos activos</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-lg bg-card/50 hover:bg-card/80 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-secondary to-secondary/80 flex items-center justify-center shadow-lg">
+                  <Users className="h-5 w-5 text-accent" size={20} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">156</p>
+                  <p className="text-xs text-muted-foreground">Vistas de perfil</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Button className="w-full shadow-lg" asChild>
+            <Link to="/mis-trabajos">
+              Ver mis trabajos
+            </Link>
           </Button>
         </CardContent>
       </Card>
 
-      {/* Suggested Companies */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Empresas Sugeridas</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {suggestedCompanies.map((company) => (
-            <div key={company.name} className="flex items-center gap-3">
-              <Avatar className="h-10 w-10 border border-border">
-                <AvatarFallback>{company.name[0]}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{company.name}</p>
-                <p className="text-xs text-muted-foreground">{company.jobs} trabajos activos</p>
-              </div>
-              <Button variant="ghost" size="sm">
-                Seguir
-              </Button>
-            </div>
-          ))}
+      {/* Quick tips */}
+      <Card className="border-accent/20">
+        <CardContent className="p-6 space-y-3">
+          <div className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-accent" size={20} />
+            <h4 className="font-semibold">Consejo rápido</h4>
+          </div>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Los freelancers con perfil completo reciben 3x más invitaciones a proyectos.
+          </p>
+          <Button variant="outline" size="sm" className="w-full border-accent/50 hover:border-accent hover:text-accent">
+            Completar perfil
+          </Button>
         </CardContent>
       </Card>
     </div>

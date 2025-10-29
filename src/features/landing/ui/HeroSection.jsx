@@ -1,38 +1,89 @@
 import { Link } from 'react-router-dom'
 import { Button } from '../../../components/ui/Button'
-import { Wallet, Zap, ArrowRight } from '../../../components/ui/Icons'
+import { ArrowRight, Zap, Shield } from '../../../components/ui/Icons'
 
-export const HeroSection = () => {
+export function HeroSection() {
   return (
-    <section className="relative overflow-hidden border-b border-border">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
-      <div className="container relative mx-auto py-24 md:py-32 px-4">
-        <div className="mx-auto max-w-3xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-sm text-primary">
-            <Zap className="h-4 w-4" size={16} />
-            Powered by Stellar Blockchain
+    <section className="relative overflow-hidden py-20 md:py-32">
+      {/* Fondo animado con gradientes */}
+      <div className="absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-primary/20 blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-accent/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      </div>
+
+      <div className="container mx-auto px-4">
+        <div className="mx-auto max-w-4xl text-center space-y-8 animate-fade-in">
+          {/* Badge superior */}
+          <div className="inline-flex items-center gap-2 rounded-full glass border border-primary/30 px-4 py-2 text-sm font-medium shadow-lg shadow-primary/20">
+            <Zap className="h-4 w-4 text-accent" size={16} />
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              Plataforma descentralizada con blockchain
+            </span>
           </div>
-          
-          <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-            El futuro del freelancing es <span className="text-primary">descentralizado</span>
+
+          {/* Título principal */}
+          <h1 className="text-5xl font-bold tracking-tight sm:text-6xl md:text-7xl lg:text-8xl">
+            <span className="block bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-slide-up" style={{ backgroundSize: '200% auto' }}>
+              El futuro del
+            </span>
+            <span className="block bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent animate-slide-up" style={{ animationDelay: '0.1s' }}>
+              trabajo freelance
+            </span>
           </h1>
-          
-          <p className="mb-8 text-lg text-muted-foreground leading-relaxed">
-            Conecta con talento global mediante contratos inteligentes. Pagos seguros, transparentes y sin
-            intermediarios en la blockchain de Stellar.
+
+          {/* Descripción */}
+          <p className="mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl animate-slide-up" style={{ animationDelay: '0.2s' }}>
+            Conecta con clientes de todo el mundo, cobra al instante con criptomonedas y 
+            construye tu reputación verificable en la blockchain.
           </p>
-          
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" className="gap-2">
-              <Wallet size={20} />
-              Conectar Wallet
-            </Button>
-            <Button size="lg" variant="outline" className="gap-2 bg-transparent" asChild>
-              <Link to="/feed">
-                Explorar Trabajos
-                <ArrowRight size={20} />
+
+          {/* Botones CTA */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+            <Button asChild size="lg" className="group w-full sm:w-auto">
+              <Link to="/feed" className="flex items-center gap-2">
+                Explorar Proyectos
+                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" size={20} />
               </Link>
             </Button>
+            <Button asChild variant="outline" size="lg" className="w-full sm:w-auto border-accent/50 hover:border-accent">
+              <Link to="/feed">
+                Publicar Trabajo
+              </Link>
+            </Button>
+          </div>
+
+          {/* Estadísticas */}
+          <div className="grid grid-cols-2 gap-8 pt-12 md:grid-cols-4 animate-slide-up" style={{ animationDelay: '0.4s' }}>
+            <div className="space-y-2">
+              <p className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                50K+
+              </p>
+              <p className="text-sm text-muted-foreground">Freelancers activos</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                $10M+
+              </p>
+              <p className="text-sm text-muted-foreground">Pagos procesados</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                15K+
+              </p>
+              <p className="text-sm text-muted-foreground">Proyectos completados</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                99.8%
+              </p>
+              <p className="text-sm text-muted-foreground">Satisfacción</p>
+            </div>
+          </div>
+
+          {/* Trust badge */}
+          <div className="flex items-center justify-center gap-2 pt-8 text-sm text-muted-foreground">
+            <Shield className="h-5 w-5 text-accent" size={20} />
+            <span>Pagos seguros con contratos inteligentes auditados</span>
           </div>
         </div>
       </div>

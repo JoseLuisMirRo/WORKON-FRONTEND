@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { Button } from './ui/Button'
 import { Avatar, AvatarImage, AvatarFallback } from './ui/Avatar'
 import {
@@ -11,68 +11,97 @@ import {
 } from './ui/DropdownMenu'
 import { Badge } from './ui/Badge'
 import { Bell, User, Wallet, LogOut, Settings } from './ui/Icons'
+import { cn } from '../lib/utils'
 
 export function Navbar() {
+  const location = useLocation()
+  
+  const isActive = (path) => location.pathname === path
+
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-50 w-full border-b border-border/40 glass shadow-lg">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-8">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Wallet className="h-5 w-5 text-primary-foreground" size={20} />
+          <Link to="/" className="flex items-center gap-2 group">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary shadow-lg shadow-primary/30 group-hover:shadow-xl group-hover:shadow-primary/40 transition-all duration-300">
+              <Wallet className="h-5 w-5 text-white" size={20} />
             </div>
-            <span className="text-xl font-bold">WorkOn</span>
+            <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              WorkOn
+            </span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-6">
-            <Link
-              to="/feed"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Feed
-            </Link>
-            <Link
-              to="/mis-trabajos"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Mis Trabajos
-            </Link>
-            <Link
-              to="/mensajes"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
-            >
-              Mensajes
-              <Badge
-                variant="destructive"
-                className="h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+          <div className="hidden md:flex items-center gap-2">
+            <Link to="/feed">
+              <Button 
+                variant={isActive('/feed') ? 'default' : 'ghost'} 
+                size="sm"
+                className={cn(
+                  "transition-all duration-200",
+                  !isActive('/feed') && "hover:text-accent"
+                )}
               >
-                3
-              </Badge>
+                Feed
+              </Button>
+            </Link>
+            <Link to="/mis-trabajos">
+              <Button 
+                variant={isActive('/mis-trabajos') ? 'default' : 'ghost'} 
+                size="sm"
+                className={cn(
+                  "transition-all duration-200",
+                  !isActive('/mis-trabajos') && "hover:text-accent"
+                )}
+              >
+                Mis Trabajos
+              </Button>
+            </Link>
+            <Link to="/mensajes">
+              <Button 
+                variant={isActive('/mensajes') ? 'default' : 'ghost'} 
+                size="sm"
+                className={cn(
+                  "relative transition-all duration-200",
+                  !isActive('/mensajes') && "hover:text-accent"
+                )}
+              >
+                Mensajes
+                <Badge
+                  variant="destructive"
+                  className="ml-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px] animate-pulse"
+                >
+                  3
+                </Badge>
+              </Button>
             </Link>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" size={20} />
-            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" className="relative group">
+            <Bell className="h-5 w-5 group-hover:text-accent transition-colors" size={20} />
+            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground flex items-center justify-center animate-pulse shadow-lg">
               2
             </span>
           </Button>
 
-          <Button variant="outline" className="gap-2 bg-transparent" asChild>
+          <Button variant="outline" className="gap-2 hover:border-accent" asChild>
             <Link to="/tokens">
               <Wallet className="h-4 w-4" size={16} />
-              <span className="hidden sm:inline">2,650 USDC</span>
+              <span className="hidden sm:inline font-semibold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+                2,650 USDC
+              </span>
             </Link>
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
-                <Avatar className="h-10 w-10">
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 hover:ring-2 hover:ring-accent/50 transition-all">
+                <Avatar className="h-10 w-10 ring-2 ring-primary/20">
                   <AvatarImage src="/placeholder.svg?height=40&width=40" alt="Usuario" />
-                  <AvatarFallback>JD</AvatarFallback>
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold">
+                    JD
+                  </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
@@ -103,7 +132,7 @@ export function Navbar() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer text-destructive">
+              <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive">
                 <LogOut className="mr-2 h-4 w-4" size={16} />
                 <span>Cerrar Sesión</span>
               </DropdownMenuItem>

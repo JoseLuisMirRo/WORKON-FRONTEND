@@ -1,49 +1,73 @@
-import { Card, CardHeader, CardTitle, CardDescription } from '../../../components/ui/Card'
-import { Shield, Zap, Users } from '../../../components/ui/Icons'
+import { Card, CardContent } from '../../../components/ui/Card'
+import { Wallet, Shield, Zap } from '../../../components/ui/Icons'
 
 const features = [
   {
+    icon: Wallet,
+    title: 'Pagos Instantáneos',
+    description: 'Recibe tus pagos en USDC o XLM al instante cuando completes un proyecto. Sin esperas, sin intermediarios.',
+    gradient: 'from-primary to-primary/80',
+    iconColor: 'text-primary',
+  },
+  {
     icon: Shield,
-    title: 'Pagos Seguros',
-    description: 'Los fondos se depositan en contratos inteligentes y se liberan automáticamente al completar las entregas',
-    color: 'primary',
+    title: 'Contratos Inteligentes',
+    description: 'Tus fondos están protegidos en contratos inteligentes auditados hasta que se complete el trabajo.',
+    gradient: 'from-accent to-accent/80',
+    iconColor: 'text-accent',
   },
   {
     icon: Zap,
-    title: 'Transacciones Rápidas',
-    description: 'Aprovecha la velocidad de Stellar: confirmaciones en segundos y comisiones mínimas',
-    color: 'accent',
-  },
-  {
-    icon: Users,
-    title: 'Reputación On-Chain',
-    description: 'Tu historial y calificaciones quedan registrados en blockchain de forma inmutable y transparente',
-    color: 'success',
+    title: 'Comisiones Bajas',
+    description: 'Solo 2% de comisión en lugar del 20% de otras plataformas. Maximiza tus ganancias.',
+    gradient: 'from-secondary to-secondary/80',
+    iconColor: 'text-accent',
   },
 ]
 
-export const FeaturesSection = () => {
+export function FeaturesSection() {
   return (
-    <section className="container mx-auto py-24 px-4">
-      <div className="mb-16 text-center">
-        <h2 className="mb-4 text-3xl font-bold tracking-tight">¿Por qué WorkOn?</h2>
-        <p className="text-lg text-muted-foreground">La plataforma que revoluciona la forma de trabajar</p>
-      </div>
+    <section className="py-20 md:py-32">
+      <div className="container mx-auto px-4">
+        <div className="mx-auto max-w-2xl text-center mb-16 space-y-4">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              ¿Por qué WorkOn?
+            </span>
+          </h2>
+          <p className="text-lg text-muted-foreground">
+            La primera plataforma freelance construida sobre blockchain, diseñada para freelancers.
+          </p>
+        </div>
 
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-        {features.map((feature, index) => (
-          <Card key={index}>
-            <CardHeader>
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <feature.icon className="h-6 w-6 text-primary" size={24} />
-              </div>
-              <CardTitle>{feature.title}</CardTitle>
-              <CardDescription>
-                {feature.description}
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        ))}
+        <div className="grid gap-8 md:grid-cols-3">
+          {features.map((feature, index) => {
+            const Icon = feature.icon
+            return (
+              <Card 
+                key={index} 
+                hover 
+                className="relative overflow-hidden group animate-slide-up"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                {/* Gradiente de fondo */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}></div>
+                
+                <CardContent className="p-8 space-y-4 relative">
+                  <div className={`inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${feature.gradient} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                    <Icon className="h-7 w-7 text-white" size={28} />
+                  </div>
+                  <h3 className="text-xl font-semibold group-hover:text-accent transition-colors">
+                    {feature.title}
+                  </h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {feature.description}
+                  </p>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
       </div>
     </section>
   )

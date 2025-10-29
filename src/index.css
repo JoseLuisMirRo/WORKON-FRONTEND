@@ -1,39 +1,134 @@
 @import "tailwindcss";
 
 @theme {
-  /* Colores personalizados del sistema */
+  /* Colores mejorados del sistema con mejor contraste */
   --color-background: #06070E;
   --color-foreground: #EDF2F4;
   
-  --color-card: #0d0e16;
+  --color-card: #0f1117;
   --color-card-foreground: #EDF2F4;
   
-  --color-popover: #06070E;
+  --color-popover: #0f1117;
   --color-popover-foreground: #EDF2F4;
   
-  --color-primary: #4357AD;
-  --color-primary-foreground: #EDF2F4;
+  /* Primary con más vibración */
+  --color-primary: #5468FF;
+  --color-primary-foreground: #FFFFFF;
   
-  --color-secondary: #29524A;
+  /* Secondary más verde */
+  --color-secondary: #2D5F57;
   --color-secondary-foreground: #EDF2F4;
   
-  --color-muted: #1a1b23;
-  --color-muted-foreground: #a8b2b9;
+  /* Muted mejorado */
+  --color-muted: #1a1d28;
+  --color-muted-foreground: #9CA3AF;
   
-  --color-accent: #4EA699;
-  --color-accent-foreground: #EDF2F4;
+  /* Accent más brillante */
+  --color-accent: #5ED4C0;
+  --color-accent-foreground: #06070E;
   
-  --color-destructive: #dc2626;
-  --color-destructive-foreground: #EDF2F4;
+  --color-destructive: #EF4444;
+  --color-destructive-foreground: #FFFFFF;
   
-  --color-border: #1f2937;
-  --color-input: #1a1b23;
-  --color-ring: #4357AD;
+  /* Success color */
+  --color-success: #10B981;
+  --color-success-foreground: #FFFFFF;
   
-  --radius: 0.5rem;
+  /* Warning color */
+  --color-warning: #F59E0B;
+  --color-warning-foreground: #06070E;
+  
+  --color-border: #1F2937;
+  --color-input: #1a1d28;
+  --color-ring: #5468FF;
+  
+  --radius: 0.75rem;
 }
 
 body {
   font-family: 'Geist', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
+
+/* Animaciones globales */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+/* Utilidades personalizadas */
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+/* Glassmorphism */
+.glass {
+  background: rgba(15, 17, 23, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Gradientes personalizados */
+.gradient-primary {
+  background: linear-gradient(135deg, #5468FF 0%, #4357AD 100%);
+}
+
+.gradient-accent {
+  background: linear-gradient(135deg, #5ED4C0 0%, #4EA699 100%);
+}
+
+.gradient-secondary {
+  background: linear-gradient(135deg, #2D5F57 0%, #29524A 100%);
+}
+
+/* Sombras mejoradas */
+.shadow-glow {
+  box-shadow: 0 0 20px rgba(84, 104, 255, 0.3);
+}
+
+.shadow-glow-accent {
+  box-shadow: 0 0 20px rgba(94, 212, 192, 0.3);
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-muted);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
 }

@@ -1,31 +1,62 @@
-import { useState } from 'react'
 import { Button } from '../../../components/ui/Button'
-import { Input } from '../../../components/ui/Input'
-import { Send } from '../../../components/ui/Icons'
+import { Paperclip, Smile, Send } from '../../../components/ui/Icons'
 
-export const MessageInput = ({ onSend, disabled }) => {
-  const [message, setMessage] = useState('')
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (message.trim()) {
-      onSend(message)
-      setMessage('')
+export function MessageInput({ value, onChange, onSend }) {
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      onSend()
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 border-t border-border flex gap-2">
-      <Input
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        placeholder="Escribe un mensaje..."
-        disabled={disabled}
-        className="flex-1"
-      />
-      <Button type="submit" disabled={disabled || !message.trim()} size="icon">
-        <Send size={20} />
-      </Button>
-    </form>
+    <div className="border-t border-border/50 p-4 bg-card/50 backdrop-blur-sm">
+      <div className="flex items-end gap-2">
+        <div className="flex gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="hover:bg-accent/10 hover:text-accent flex-shrink-0"
+          >
+            <Paperclip className="h-5 w-5" size={20} />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="hover:bg-accent/10 hover:text-accent flex-shrink-0"
+          >
+            <Smile className="h-5 w-5" size={20} />
+          </Button>
+        </div>
+
+        <div className="flex-1 relative group">
+          <textarea
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Escribe un mensaje..."
+            rows="1"
+            className="w-full px-4 py-3 pr-12 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none transition-all duration-200 shadow-sm hover:shadow-md"
+            style={{ 
+              minHeight: '48px', 
+              maxHeight: '120px',
+              overflow: 'auto'
+            }}
+          />
+        </div>
+
+        <Button
+          onClick={onSend}
+          disabled={!value.trim()}
+          size="icon"
+          className="flex-shrink-0 h-12 w-12 shadow-lg"
+        >
+          <Send className="h-5 w-5" size={20} />
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground mt-2 px-2">
+        Presiona <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-[10px]">Enter</kbd> para enviar, <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-[10px]">Shift+Enter</kbd> para nueva línea
+      </p>
+    </div>
   )
 }

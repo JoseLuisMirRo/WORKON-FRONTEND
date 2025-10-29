@@ -1,73 +1,86 @@
 import { Avatar, AvatarImage, AvatarFallback } from '../../../components/ui/Avatar'
 import { Badge } from '../../../components/ui/Badge'
 import { cn } from '../../../lib/utils'
+import { Clock } from '../../../components/ui/Icons'
 
-export const ConversationList = ({ conversations, selectedConversation, onSelect }) => {
-  const formatTime = (timestamp) => {
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diff = now - date
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    
-    if (hours < 24) {
-      return date.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })
-    }
-    return date.toLocaleDateString('es', { month: 'short', day: 'numeric' })
-  }
-
+export function ConversationList({ conversations, selectedId, onSelect }) {
   return (
-    <div className="flex flex-col h-full border-r border-border">
-      <div className="p-4 border-b border-border">
-        <h2 className="text-lg font-semibold">Mensajes</h2>
-      </div>
-      
-      <div className="flex-1 overflow-y-auto">
-        {conversations.map((conversation) => (
-          <div
-            key={conversation.id}
-            onClick={() => onSelect(conversation)}
-            className={cn(
-              "p-4 cursor-pointer hover:bg-accent/50 transition-colors border-b border-border",
-              selectedConversation?.id === conversation.id && "bg-accent"
-            )}
-          >
-            <div className="flex items-start gap-3">
-              <div className="relative">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={conversation.user.avatar} alt={conversation.user.name} />
-                  <AvatarFallback>{conversation.user.name[0]}</AvatarFallback>
-                </Avatar>
-                {conversation.user.online && (
-                  <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-accent border-2 border-background" />
-                )}
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate">{conversation.user.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{conversation.jobTitle}</p>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-xs text-muted-foreground">
-                      {formatTime(conversation.timestamp)}
-                    </span>
-                    {conversation.unread > 0 && (
-                      <Badge variant="default" className="h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                        {conversation.unread}
-                      </Badge>
-                    )}
-                  </div>
+    <div className="space-y-1">
+      {conversations.map((conversation) => (
+        <button
+          key={conversation.id}
+          onClick={() => onSelect(conversation.id)}
+          className={cn(
+            "w-full p-4 rounded-xl text-left transition-all duration-200 group",
+            "hover:bg-card/80 hover:shadow-md",
+            selectedId === conversation.id 
+              ? "bg-primary/10 border-2 border-primary/50 shadow-lg shadow-primary/20" 
+              : "border-2 border-transparent hover:border-accent/30"
+          )}
+        >
+          <div className="flex items-start gap-3">
+            <div className="relative">
+              <Avatar className={cn(
+                "h-12 w-12 ring-2 transition-all",
+                selectedId === conversation.id 
+                  ? "ring-primary/50" 
+                  : "ring-border/50 group-hover:ring-accent/50"
+              )}>
+                <AvatarImage src={conversation.avatar} alt={conversation.name} />
+                <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold">
+                  {conversation.name.split(' ').map(n => n[0]).join('')}
+                </AvatarFallback>
+              </Avatar>
+              {conversation.online && (
+                <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-accent border-2 border-background shadow-lg animate-pulse" />
+              )}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between mb-1">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <h4 className={cn(
+                    "font-semibold truncate transition-colors",
+                    selectedId === conversation.id 
+                      ? "text-primary" 
+                      : "group-hover:text-accent"
+                  )}>
+                    {conversation.name}
+                  </h4>
+                  {conversation.verified && (
+                    <Badge variant="accent" className="text-xs px-1.5 py-0 flex-shrink-0">
+                      ✓
+                    </Badge>
+                  )}
                 </div>
-                <p className="text-sm text-muted-foreground truncate mt-1">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0 ml-2">
+                  <Clock className="h-3 w-3" size={12} />
+                  <span>{conversation.lastMessageTime}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-2">
+                <p className={cn(
+                  "text-sm truncate flex-1",
+                  conversation.unread 
+                    ? "font-medium text-foreground" 
+                    : "text-muted-foreground"
+                )}>
                   {conversation.lastMessage}
                 </p>
+                {conversation.unread > 0 && (
+                  <Badge 
+                    variant="default" 
+                    className="flex-shrink-0 h-6 w-6 rounded-full p-0 flex items-center justify-center text-xs font-bold shadow-lg shadow-primary/30 animate-pulse"
+                  >
+                    {conversation.unread}
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
-        ))}
-      </div>
+        </button>
+      ))}
     </div>
   )
 }
-
