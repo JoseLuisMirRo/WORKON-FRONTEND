@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from './ui/Button'
 import { Avatar, AvatarImage, AvatarFallback } from './ui/Avatar'
 import {
@@ -13,11 +13,19 @@ import { Badge } from './ui/Badge'
 import { User, Wallet, LogOut, Settings } from './ui/Icons'
 import { LogoIcon } from './Logo'
 import { cn } from '../lib/utils'
+import { useAuth } from '../contexts/AuthContext'
 
 export function Navbar() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
   
   const isActive = (path) => location.pathname === path
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login')
+  }
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border/40 glass shadow-lg">
@@ -97,8 +105,10 @@ export function Navbar() {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col gap-1">
-                  <p className="text-sm font-medium leading-none">Juan Desarrollador</p>
-                  <p className="text-xs leading-none text-muted-foreground">juan@ejemplo.com</p>
+                  <p className="text-sm font-medium leading-none">
+                    {user?.profile?.firstName ? `${user.profile.firstName} ${user.profile.lastName}` : 'Usuario'}
+                  </p>
+                  <p className="text-xs leading-none text-muted-foreground">{user?.email || 'usuario@ejemplo.com'}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -121,7 +131,10 @@ export function Navbar() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive">
+              <DropdownMenuItem 
+                className="cursor-pointer text-destructive focus:text-destructive"
+                onClick={handleLogout}
+              >
                 <LogOut className="mr-2 h-4 w-4" size={16} />
                 <span>Cerrar Sesión</span>
               </DropdownMenuItem>
