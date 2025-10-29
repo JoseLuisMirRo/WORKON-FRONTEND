@@ -33,7 +33,7 @@ export const Footer = () => {
               <span className="text-lg font-bold">WorkOn</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Plataforma descentralizada de freelancing en Stellar blockchain
+              Powered by Stellar
             </p>
           </div>
 

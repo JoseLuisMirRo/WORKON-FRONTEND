@@ -17,17 +17,17 @@ export function HeroSection() {
           <div className="inline-flex items-center gap-2 rounded-full glass border border-primary/30 px-4 py-2 text-sm font-medium shadow-lg shadow-primary/20">
             <Zap className="h-4 w-4 text-accent" size={16} />
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Plataforma descentralizada con blockchain
+              Powered by Stellar
             </span>
           </div>
 
           {/* Título principal */}
           <h1 className="text-5xl font-bold tracking-tight sm:text-6xl md:text-7xl lg:text-8xl">
             <span className="block bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-slide-up" style={{ backgroundSize: '200% auto' }}>
-              El futuro del
+              El futuro del freelancing
             </span>
             <span className="block bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent animate-slide-up" style={{ animationDelay: '0.1s' }}>
-              trabajo freelance
+              es descentralizado
             </span>
           </h1>
 
