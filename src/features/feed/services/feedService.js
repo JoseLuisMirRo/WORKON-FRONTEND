@@ -1,4 +1,6 @@
-// Mock data para el feed de trabajos
+import { supabase } from '../../../lib/supabaseClient';
+
+// Mock data para el feed de trabajos (fallback)
 const mockJobFeed = [
   {
     id: "1",
@@ -112,64 +114,157 @@ const suggestedCompanies = [
 ];
 
 /**
- * Simula una llamada a la API para obtener trabajos
- * @param {Object} filters - Filtros para aplicar
- * @returns {Promise<Array>} Lista de trabajos
+ * Transform proposal from Supabase to job format
+ * @param {Object} proposal - Proposal from Supabase
+ * @returns {Object} Job formatted for the feed
+ */
+const transformProposalToJob = (proposal) => {
+  // Extract tags/skills from jsonb
+  const skills = Array.isArray(proposal.tags) ? proposal.tags : [];
+  
+  // Calculate time posted
+  const createdAt = new Date(proposal.created_at);
+  const now = new Date();
+  const diffMs = now - createdAt;
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffHours / 24);
+  
+  let timePosted;
+  if (diffHours < 1) {
+    timePosted = 'Hace menos de 1 hora';
+  } else if (diffHours < 24) {
+    timePosted = `Hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+  } else {
+    timePosted = `Hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+  }
+  
+  return {
+    id: proposal.id.toString(),
+    title: proposal.title,
+    description: proposal.description || 'Sin descripción',
+    budget: `${parseFloat(proposal.total_payment).toLocaleString('es-AR')} USDC`,
+    budgetType: 'Proyecto completo',
+    budgetRaw: parseFloat(proposal.total_payment),
+    status: proposal.status,
+    skills: skills,
+    timePosted: timePosted,
+    createdAt: proposal.created_at,
+    updatedAt: proposal.updated_at,
+    employerId: proposal.employer_id,
+    selectedFreelancerId: proposal.selected_freelancer_id,
+    // Default values for UI (can be enhanced with joins to other tables)
+    company: 'Empleador',
+    companyLogo: '/placeholder-company.png',
+    companySize: 'Sin especificar',
+    location: 'Remoto',
+    category: skills.length > 0 ? skills[0] : 'General',
+    applicants: 0, // TODO: Join with applications table
+    likes: 0, // TODO: Join with likes table
+    comments: 0, // TODO: Join with comments table
+    verified: false, // TODO: Check employer verification
+  };
+};
+
+/**
+ * Fetches proposals from Supabase and applies filters
+ * @param {Object} filters - Filters to apply
+ * @returns {Promise<Array>} List of jobs
  */
 export const fetchJobs = async (filters = {}) => {
-  // Simular delay de red
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  let jobs = [...mockJobFeed];
-  
-  // Aplicar filtros
-  if (filters.category && filters.category !== 'todas') {
-    jobs = jobs.filter(job => 
-      job.category.toLowerCase().includes(filters.category.toLowerCase())
-    );
-  }
-  
-  if (filters.location && filters.location !== 'todas') {
-    jobs = jobs.filter(job => 
-      job.location.toLowerCase().includes(filters.location.toLowerCase())
-    );
-  }
-  
-  if (filters.verifiedOnly) {
-    jobs = jobs.filter(job => job.verified);
-  }
-  
-  if (filters.search) {
-    const searchLower = filters.search.toLowerCase();
-    jobs = jobs.filter(job => 
-      job.title.toLowerCase().includes(searchLower) ||
-      job.description.toLowerCase().includes(searchLower) ||
-      job.skills.some(skill => skill.toLowerCase().includes(searchLower))
-    );
-  }
-  
-  // Ordenar
-  if (filters.sortBy) {
-    switch (filters.sortBy) {
-      case 'recientes':
-        // Ya está ordenado por más reciente
-        break;
-      case 'presupuesto':
-        jobs.sort((a, b) => {
-          const budgetA = parseInt(a.budget.replace(/[^\d]/g, ''));
-          const budgetB = parseInt(b.budget.replace(/[^\d]/g, ''));
-          return budgetB - budgetA;
-        });
-        break;
-      case 'aplicantes':
-        jobs.sort((a, b) => a.applicants - b.applicants);
-        break;
-      default:
-        break;
+  try {
+    // Build query
+    let query = supabase
+      .from('proposals')
+      .select('*');
+    
+    // Filter by status - only show published proposals by default
+    if (!filters.includeAll) {
+      query = query.eq('status', 'publicada');
     }
+    
+    // Apply search filter in the query if provided
+    if (filters.search) {
+      query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+    }
+    
+    // Order by created_at descending (most recent first)
+    query = query.order('created_at', { ascending: false });
+    
+    // Execute query
+    const { data: proposals, error } = await query;
+    
+    if (error) {
+      console.error('Error fetching proposals from Supabase:', error);
+      // Fallback to mock data
+      return mockJobFeed;
+    }
+    
+    if (!proposals || proposals.length === 0) {
+      console.log('No proposals found in Supabase, using mock data');
+      return mockJobFeed;
+    }
+    
+    // Transform proposals to job format
+    let jobs = proposals.map(transformProposalToJob);
+    
+    // Apply client-side filters
+    if (filters.category && filters.category !== 'todas') {
+      jobs = jobs.filter(job => 
+        job.category.toLowerCase().includes(filters.category.toLowerCase()) ||
+        job.skills.some(skill => skill.toLowerCase().includes(filters.category.toLowerCase()))
+      );
+    }
+    
+    if (filters.location && filters.location !== 'todas') {
+      jobs = jobs.filter(job => 
+        job.location.toLowerCase().includes(filters.location.toLowerCase())
+      );
+    }
+    
+    if (filters.budget && filters.budget !== 'todos') {
+      jobs = jobs.filter(job => {
+        const budget = job.budgetRaw;
+        switch (filters.budget) {
+          case 'bajo':
+            return budget < 500;
+          case 'medio':
+            return budget >= 500 && budget <= 1500;
+          case 'alto':
+            return budget > 1500;
+          default:
+            return true;
+        }
+      });
+    }
+    
+    if (filters.verifiedOnly) {
+      jobs = jobs.filter(job => job.verified);
+    }
+    
+    // Apply sorting
+    if (filters.sortBy) {
+      switch (filters.sortBy) {
+        case 'recientes':
+          // Already sorted by created_at desc in query
+          break;
+        case 'presupuesto':
+          jobs.sort((a, b) => b.budgetRaw - a.budgetRaw);
+          break;
+        case 'aplicantes':
+          jobs.sort((a, b) => a.applicants - b.applicants);
+          break;
+        default:
+          break;
+      }
+    }
+    
+    return jobs;
+    
+  } catch (error) {
+    console.error('Error in fetchJobs:', error);
+    // Return mock data as fallback
+    return mockJobFeed;
   }
-  
-  return jobs;
 };
 
 /**
