@@ -15,12 +15,15 @@ import { Bell, User, Wallet, LogOut, Settings, Menu, X } from './ui/Icons'
 import { LogoIcon } from './Logo'
 import { cn } from '../lib/utils'
 import { useAuth } from '../contexts/AuthContext'
+import { isConnected, requestAccess, getAddress } from "@stellar/freighter-api";
+
 
 export function Navbar() {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, isAuthenticated, logout } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [walletAddress, setWalletAddress] = useState()
 
   const isActive = (path) => location.pathname === path
 
@@ -31,6 +34,26 @@ export function Navbar() {
     await logout()
     closeMobileMenu()
     navigate('/login')
+  }
+
+  async function connectFreighter() {
+    try {
+      // Check if Freighter is connected
+      const connectionResult = await isConnected();
+
+      console.log("connectionResult", connectionResult);
+      if (!connectionResult.isConnected) {
+        // Request access to Freighter
+        await requestAccess();
+      }
+
+      // Get the address after connection
+      const addressResult = await getAddress();
+      setWalletAddress(addressResult.address);
+      console.log(addressResult)
+    } catch (error) {
+      console.error("Error trying to connect wallet", error)
+    }
   }
 
   // Si no hay sesión, mostrar navbar simplificado
@@ -118,12 +141,33 @@ export function Navbar() {
 
           <div className="flex items-center gap-3">
 
-            {/* Tokens - ocultar en móviles */}
-            <Button variant="outline" className="relative group">
-              <Link to="/tokens">
-                <Wallet className="h-4 w-4 transition-colors" size={16} />
-              </Link>
-            </Button>
+            {/* Mostrar boton para connectar wallet */}
+
+            {
+              !walletAddress ?
+                <>
+                  {/* Wallet Connection Button */}
+                  <Button 
+                    onClick={connectFreighter} 
+                    variant="outline" 
+                    className="gap-2 hover:border-accent transition-all"
+                  >
+                    <Wallet className="h-4 w-4" size={16} />
+                    <span className="hidden sm:inline font-semibold">
+                      Connect Wallet
+                    </span>
+                  </Button>
+                </>
+                :
+                <>
+                  {/* Tokens - ocultar en móviles */}
+                  < Button variant="outline" className="relative group">
+                    <Link to="/tokens">
+                      <Wallet className="h-4 w-4 transition-colors" size={16} />
+                    </Link>
+                  </Button>
+                </>
+            }
 
             {/* Perfil Desktop */}
             <div className="hidden md:block">
@@ -193,7 +237,7 @@ export function Navbar() {
             </Button>
           </div>
         </div>
-      </nav>
+      </nav >
 
       {/* Menú Móvil */}
       {isMobileMenuOpen && (
@@ -264,49 +308,49 @@ export function Navbar() {
                     <p className="text-xs text-muted-foreground">{user?.email || 'usuario@ejemplo.com'}</p>
                   </div>
                 </div>
-              </div>
 
-              {/* Opciones adicionales */}
-              <Link to="/perfil" onClick={closeMobileMenu}>
-                <Button variant="ghost" className="w-full justify-start text-left">
-                  <User className="mr-2 h-4 w-4" size={16} />
-                  Mi Perfil
-                </Button>
-              </Link>
+                {/* Opciones adicionales */}
+                <Link to="/perfil" onClick={closeMobileMenu}>
+                  <Button variant="ghost" className="w-full justify-start text-left">
+                    <User className="mr-2 h-4 w-4" size={16} />
+                    Mi Perfil
+                  </Button>
+                </Link>
 
-              <Link to="/tokens" onClick={closeMobileMenu}>
-                <Button variant="ghost" className="w-full justify-start text-left">
-                  <Wallet className="mr-2 h-4 w-4" size={16} />
-                  <span className="flex items-center gap-2">
-                    Tokens{' '}
-                    <span className="text-xs font-semibold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-                      2,650 USDC
+                <Link to="/tokens" onClick={closeMobileMenu}>
+                  <Button variant="ghost" className="w-full justify-start text-left">
+                    <Wallet className="mr-2 h-4 w-4" size={16} />
+                    <span className="flex items-center gap-2">
+                      Tokens{' '}
+                      <span className="text-xs font-semibold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+                        2,650 USDC
+                      </span>
                     </span>
-                  </span>
+                  </Button>
+                </Link>
+
+                <Link to="/configuracion" onClick={closeMobileMenu}>
+                  <Button variant="ghost" className="w-full justify-start text-left">
+                    <Settings className="mr-2 h-4 w-4" size={16} />
+                    Configuración
+                  </Button>
+                </Link>
+
+                <div className="border-t border-border pt-3 mt-3" />
+
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-left text-destructive hover:text-destructive"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="mr-2 h-4 w-4" size={16} />
+                  Cerrar Sesión
                 </Button>
-              </Link>
-
-              <Link to="/configuracion" onClick={closeMobileMenu}>
-                <Button variant="ghost" className="w-full justify-start text-left">
-                  <Settings className="mr-2 h-4 w-4" size={16} />
-                  Configuración
-                </Button>
-              </Link>
-
-              <div className="border-t border-border pt-3 mt-3" />
-
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-left text-destructive hover:text-destructive"
-                onClick={handleLogout}
-              >
-                <LogOut className="mr-2 h-4 w-4" size={16} />
-                Cerrar Sesión
-              </Button>
+              </div>
             </div>
           </div>
         </div>
       )}
-    </>
-  )
+      </>
+    )
 }
