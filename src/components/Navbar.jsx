@@ -14,15 +14,39 @@ import { Badge } from './ui/Badge'
 import { Bell, User, Wallet, LogOut, Settings, Menu, X } from './ui/Icons'
 import { LogoIcon } from './Logo'
 import { cn } from '../lib/utils'
+import { isConnected, requestAccess, getAddress } from "@stellar/freighter-api";
+
 
 export function Navbar() {
   const location = useLocation()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  
+
   const isActive = (path) => location.pathname === path
-  
+
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen)
   const closeMobileMenu = () => setIsMobileMenuOpen(false)
+
+  const [walletAddress, setWalletAddress] = useState();
+
+  async function connectFreighter() {
+    try {
+      // Check if Freighter is connected
+      const connectionResult = await isConnected();
+
+      console.log("connectionResult", connectionResult);
+      if (!connectionResult.isConnected) {
+        // Request access to Freighter
+        await requestAccess();
+      }
+
+      // Get the address after connection
+      const addressResult = await getAddress();
+      setWalletAddress(addressResult.address);
+      console.log(addressResult)
+    } catch (error) {
+      console.error("Error trying to connect wallet", error)
+    }
+  }
 
   return (
     <>
@@ -36,8 +60,8 @@ export function Navbar() {
             {/* Menú Desktop */}
             <div className="hidden md:flex items-center gap-2">
               <Link to="/feed">
-                <Button 
-                  variant={isActive('/feed') ? 'default' : 'ghost'} 
+                <Button
+                  variant={isActive('/feed') ? 'default' : 'ghost'}
                   size="sm"
                   className={cn(
                     "transition-all duration-200",
@@ -48,8 +72,8 @@ export function Navbar() {
                 </Button>
               </Link>
               <Link to="/mis-trabajos">
-                <Button 
-                  variant={isActive('/mis-trabajos') ? 'default' : 'ghost'} 
+                <Button
+                  variant={isActive('/mis-trabajos') ? 'default' : 'ghost'}
                   size="sm"
                   className={cn(
                     "transition-all duration-200",
@@ -60,8 +84,8 @@ export function Navbar() {
                 </Button>
               </Link>
               <Link to="/mensajes">
-                <Button 
-                  variant={isActive('/mensajes') ? 'default' : 'ghost'} 
+                <Button
+                  variant={isActive('/mensajes') ? 'default' : 'ghost'}
                   size="sm"
                   className={cn(
                     "relative transition-all duration-200",
@@ -82,12 +106,33 @@ export function Navbar() {
 
           <div className="flex items-center gap-3">
 
-            {/* Tokens - ocultar en móviles */}
-            <Button variant="outline" className="relative group">
-              <Link to="/tokens">
-                <Wallet className="h-4 w-4 transition-colors" size={16} />
-              </Link>
-            </Button>
+            {/* Mostrar boton para connectar wallet */}
+
+            {
+              !walletAddress ?
+                <>
+                  {/* Wallet Connection Button */}
+                  <Button 
+                    onClick={connectFreighter} 
+                    variant="outline" 
+                    className="gap-2 hover:border-accent transition-all"
+                  >
+                    <Wallet className="h-4 w-4" size={16} />
+                    <span className="hidden sm:inline font-semibold">
+                      Connect Wallet
+                    </span>
+                  </Button>
+                </>
+                :
+                <>
+                  {/* Tokens - ocultar en móviles */}
+                  < Button variant="outline" className="relative group">
+                    <Link to="/tokens">
+                      <Wallet className="h-4 w-4 transition-colors" size={16} />
+                    </Link>
+                  </Button>
+                </>
+            }
 
             {/* Perfil Desktop */}
             <div className="hidden md:block">
@@ -138,9 +183,9 @@ export function Navbar() {
             </div>
 
             {/* Botón Hamburguesa - solo móvil */}
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="md:hidden"
               onClick={toggleMobileMenu}
             >
@@ -152,118 +197,120 @@ export function Navbar() {
             </Button>
           </div>
         </div>
-      </nav>
+      </nav >
 
       {/* Menú Móvil */}
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 top-16 z-40 md:hidden">
-          {/* Overlay */}
-          <button 
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
-            onClick={closeMobileMenu}
-            onKeyDown={(e) => e.key === 'Escape' && closeMobileMenu()}
-            aria-label="Cerrar menú"
-            type="button"
-          />
-          
-          {/* Menú */}
-          <div className="relative bg-background border-b border-border shadow-lg animate-in slide-in-from-top duration-200">
-            <div className="container mx-auto px-4 py-4 space-y-3">
-              {/* Enlaces de navegación */}
-              <Link to="/feed" onClick={closeMobileMenu}>
-                <Button 
-                  variant={isActive('/feed') ? 'default' : 'ghost'} 
-                  className="w-full justify-start text-left"
-                >
-                  Feed
-                </Button>
-              </Link>
-              
-              <Link to="/mis-trabajos" onClick={closeMobileMenu}>
-                <Button 
-                  variant={isActive('/mis-trabajos') ? 'default' : 'ghost'} 
-                  className="w-full justify-start text-left"
-                >
-                  Mis Trabajos
-                </Button>
-              </Link>
-              
-              <Link to="/mensajes" onClick={closeMobileMenu}>
-                <Button 
-                  variant={isActive('/mensajes') ? 'default' : 'ghost'} 
-                  className="w-full justify-start text-left relative"
-                >
-                  <span className="flex items-center gap-2">
-                    Mensajes
-                    <Badge
-                      variant="destructive"
-                      className="h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]"
-                    >
-                      3
-                    </Badge>
-                  </span>
-                </Button>
-              </Link>
+      {
+        isMobileMenuOpen && (
+          <div className="fixed inset-0 top-16 z-40 md:hidden">
+            {/* Overlay */}
+            <button
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
+              onClick={closeMobileMenu}
+              onKeyDown={(e) => e.key === 'Escape' && closeMobileMenu()}
+              aria-label="Cerrar menú"
+              type="button"
+            />
 
-              <div className="border-t border-border pt-3 mt-3" />
+            {/* Menú */}
+            <div className="relative bg-background border-b border-border shadow-lg animate-in slide-in-from-top duration-200">
+              <div className="container mx-auto px-4 py-4 space-y-3">
+                {/* Enlaces de navegación */}
+                <Link to="/feed" onClick={closeMobileMenu}>
+                  <Button
+                    variant={isActive('/feed') ? 'default' : 'ghost'}
+                    className="w-full justify-start text-left"
+                  >
+                    Feed
+                  </Button>
+                </Link>
 
-              {/* Información del usuario */}
-              <div className="px-3 py-2">
-                <div className="flex items-center gap-3 mb-3">
-                  <Avatar className="h-12 w-12 ring-2 ring-primary/20">
-                    <AvatarImage src="/placeholder.svg?height=48&width=48" alt="Usuario" />
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold">
-                      JD
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-sm font-medium">Juan Desarrollador</p>
-                    <p className="text-xs text-muted-foreground">juan@ejemplo.com</p>
+                <Link to="/mis-trabajos" onClick={closeMobileMenu}>
+                  <Button
+                    variant={isActive('/mis-trabajos') ? 'default' : 'ghost'}
+                    className="w-full justify-start text-left"
+                  >
+                    Mis Trabajos
+                  </Button>
+                </Link>
+
+                <Link to="/mensajes" onClick={closeMobileMenu}>
+                  <Button
+                    variant={isActive('/mensajes') ? 'default' : 'ghost'}
+                    className="w-full justify-start text-left relative"
+                  >
+                    <span className="flex items-center gap-2">
+                      Mensajes
+                      <Badge
+                        variant="destructive"
+                        className="h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]"
+                      >
+                        3
+                      </Badge>
+                    </span>
+                  </Button>
+                </Link>
+
+                <div className="border-t border-border pt-3 mt-3" />
+
+                {/* Información del usuario */}
+                <div className="px-3 py-2">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Avatar className="h-12 w-12 ring-2 ring-primary/20">
+                      <AvatarImage src="/placeholder.svg?height=48&width=48" alt="Usuario" />
+                      <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold">
+                        JD
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-medium">Juan Desarrollador</p>
+                      <p className="text-xs text-muted-foreground">juan@ejemplo.com</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Opciones adicionales */}
-              <Link to="/perfil" onClick={closeMobileMenu}>
-                <Button variant="ghost" className="w-full justify-start text-left">
-                  <User className="mr-2 h-4 w-4" size={16} />
-                  Mi Perfil
-                </Button>
-              </Link>
+                {/* Opciones adicionales */}
+                <Link to="/perfil" onClick={closeMobileMenu}>
+                  <Button variant="ghost" className="w-full justify-start text-left">
+                    <User className="mr-2 h-4 w-4" size={16} />
+                    Mi Perfil
+                  </Button>
+                </Link>
 
-              <Link to="/tokens" onClick={closeMobileMenu}>
-                <Button variant="ghost" className="w-full justify-start text-left">
-                  <Wallet className="mr-2 h-4 w-4" size={16} />
-                  <span className="flex items-center gap-2">
-                    Tokens{' '}
-                    <span className="text-xs font-semibold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-                      2,650 USDC
+                <Link to="/tokens" onClick={closeMobileMenu}>
+                  <Button variant="ghost" className="w-full justify-start text-left">
+                    <Wallet className="mr-2 h-4 w-4" size={16} />
+                    <span className="flex items-center gap-2">
+                      Tokens{' '}
+                      <span className="text-xs font-semibold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+                        2,650 USDC
+                      </span>
                     </span>
-                  </span>
+                  </Button>
+                </Link>
+
+                <Link to="/configuracion" onClick={closeMobileMenu}>
+                  <Button variant="ghost" className="w-full justify-start text-left">
+                    <Settings className="mr-2 h-4 w-4" size={16} />
+                    Configuración
+                  </Button>
+                </Link>
+
+                <div className="border-t border-border pt-3 mt-3" />
+
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-left text-destructive hover:text-destructive"
+                  onClick={closeMobileMenu}
+                >
+                  <LogOut className="mr-2 h-4 w-4" size={16} />
+                  Cerrar Sesión
                 </Button>
-              </Link>
-
-              <Link to="/configuracion" onClick={closeMobileMenu}>
-                <Button variant="ghost" className="w-full justify-start text-left">
-                  <Settings className="mr-2 h-4 w-4" size={16} />
-                  Configuración
-                </Button>
-              </Link>
-
-              <div className="border-t border-border pt-3 mt-3" />
-
-              <Button 
-                variant="ghost" 
-                className="w-full justify-start text-left text-destructive hover:text-destructive"
-                onClick={closeMobileMenu}
-              >
-                <LogOut className="mr-2 h-4 w-4" size={16} />
-                Cerrar Sesión
-              </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
     </>
   )
 }
