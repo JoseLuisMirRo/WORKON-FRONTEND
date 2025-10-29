@@ -1,15 +1,18 @@
 import { useState } from 'react'
 import { useFeedController } from '../controllers/useFeedController'
+import { useAuth } from '../../../contexts/AuthContext'
 import { Loading } from './Loading'
 import { SearchBar } from './SearchBar'
 import { JobCard } from './JobCard'
 import { FeedFilters } from './FeedFilters'
 import { FeedStats } from './FeedStats'
 import { JobApplicationModal } from './JobApplicationModal'
-import { Card } from '../../../components/ui/Card'
+import { Card, CardContent } from '../../../components/ui/Card'
 import { Button } from '../../../components/ui/Button'
+import { CheckCircle2 } from '../../../components/ui/Icons'
 
 export const FeedPage = () => {
+  const { user } = useAuth()
   const {
     jobs,
     loading,
@@ -30,6 +33,7 @@ export const FeedPage = () => {
 
   const [selectedJob, setSelectedJob] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [applicationSuccess, setApplicationSuccess] = useState(false)
 
   if (loading) {
     return <Loading />
@@ -40,12 +44,25 @@ export const FeedPage = () => {
     setIsModalOpen(true)
   }
 
-  const handleConfirmApplication = (applicationData) => {
-    applyToJob(applicationData.jobId)
-    console.log('Aplicación enviada:', applicationData)
-    
-    // Mostrar notificación de éxito
-    alert(`¡Aplicación enviada con éxito!\n\nPresupuesto: $${applicationData.proposedBudget} USDC\nTiempo estimado: ${applicationData.estimatedDays} días`)
+  const handleConfirmApplication = async (applicationData) => {
+    try {
+      // Agregar el freelancerId del usuario autenticado
+      const dataToSend = {
+        ...applicationData,
+        freelancerId: user.id
+      }
+      
+      await applyToJob(dataToSend)
+      console.log('Aplicación enviada:', dataToSend)
+      
+      // Mostrar notificación de éxito
+      setApplicationSuccess(true)
+      setTimeout(() => setApplicationSuccess(false), 5000)
+      
+    } catch (error) {
+      console.error('Error al aplicar:', error)
+      throw error // Re-throw para que el modal lo maneje
+    }
   }
 
   const handleSkillClick = (skill) => {
@@ -54,8 +71,20 @@ export const FeedPage = () => {
 
   return (
     <div className="bg-background">
-
       <div className="container mx-auto py-6 px-4">
+        {/* Mensaje de éxito */}
+        {applicationSuccess && (
+          <Card className="mb-6 border-accent/30 bg-accent/5 animate-in slide-in-from-top">
+            <CardContent className="p-4 flex items-center gap-3">
+              <CheckCircle2 className="h-5 w-5 text-accent flex-shrink-0" size={20} />
+              <div>
+                <p className="text-sm font-medium">¡Aplicación enviada con éxito!</p>
+                <p className="text-xs text-muted-foreground">El empleador revisará tu propuesta pronto.</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid gap-6 lg:grid-cols-12">
           {/* Left Sidebar - Filters */}
           <aside className="hidden lg:block lg:col-span-3">
