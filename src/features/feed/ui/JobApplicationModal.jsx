@@ -8,19 +8,36 @@ import { Card, CardContent } from '../../../components/ui/Card'
 
 export function JobApplicationModal({ isOpen, onClose, job, onConfirm }) {
   const [coverLetter, setCoverLetter] = useState('')
-  const [proposedBudget, setProposedBudget] = useState(job?.budget || 0)
+  const [proposedBudget, setProposedBudget] = useState(job?.budgetRaw || 0)
   const [estimatedDays, setEstimatedDays] = useState(14)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
 
   if (!job) return null
 
-  const handleSubmit = () => {
-    onConfirm({
-      jobId: job.id,
-      coverLetter,
-      proposedBudget,
-      estimatedDays
-    })
-    onClose()
+  const handleSubmit = async () => {
+    // Validar carta de presentación
+    if (coverLetter.trim().length < 50) {
+      setError('La carta de presentación debe tener al menos 50 caracteres')
+      return
+    }
+
+    setIsSubmitting(true)
+    setError('')
+    
+    try {
+      await onConfirm({
+        jobId: job.id,
+        coverLetter: coverLetter.trim(),
+        proposedBudget,
+        estimatedDays
+      })
+      onClose()
+    } catch (err) {
+      setError(err.message || 'Error al enviar la aplicación')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const getInitials = (name) => {
@@ -37,21 +54,31 @@ export function JobApplicationModal({ isOpen, onClose, job, onConfirm }) {
       description="Revisa los detalles y envía tu propuesta"
       footer={
         <>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
             Cancelar
           </Button>
           <Button 
             onClick={handleSubmit}
-            disabled={!coverLetter.trim()}
+            disabled={!coverLetter.trim() || isSubmitting || coverLetter.trim().length < 50}
             className="gap-2"
           >
             <CheckCircle2 className="h-4 w-4" size={16} />
-            Enviar Aplicación
+            {isSubmitting ? 'Enviando...' : 'Enviar Aplicación'}
           </Button>
         </>
       }
     >
       <div className="space-y-6">
+        {/* Mensaje de error */}
+        {error && (
+          <Card className="border-destructive/30 bg-destructive/5">
+            <CardContent className="p-3 flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0" size={16} />
+              <p className="text-sm text-destructive">{error}</p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Detalles del trabajo */}
         <Card className="border-primary/20 bg-primary/5">
           <CardContent className="p-6 space-y-4">
@@ -204,11 +231,17 @@ export function JobApplicationModal({ isOpen, onClose, job, onConfirm }) {
               onChange={(e) => setCoverLetter(e.target.value)}
               placeholder="Explica por qué eres el candidato ideal para este proyecto. Menciona tu experiencia relevante y cómo planeas abordar el trabajo..."
               rows="6"
+              maxLength="1000"
               className="w-full px-4 py-3 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none transition-all"
             />
-            <p className="text-xs text-muted-foreground">
-              {coverLetter.length}/1000 caracteres
-            </p>
+            <div className="flex justify-between items-center text-xs">
+              <span className={coverLetter.trim().length < 50 ? 'text-destructive' : 'text-muted-foreground'}>
+                Mínimo 50 caracteres {coverLetter.trim().length < 50 ? `(faltan ${50 - coverLetter.trim().length})` : '✓'}
+              </span>
+              <span className="text-muted-foreground">
+                {coverLetter.length}/1000 caracteres
+              </span>
+            </div>
           </div>
         </div>
       </div>

@@ -1,5 +1,57 @@
 import { supabase } from '../../../lib/supabaseClient';
 
+/**
+ * Verifica si existe un perfil, si no lo crea
+ * @param {string} userId - ID del usuario
+ * @returns {Promise<boolean>} True si el perfil existe o fue creado
+ */
+const ensureProfileExists = async (userId) => {
+  try {
+    // Verificar si existe el perfil
+    const { data: existingProfile, error: checkError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+    
+    if (existingProfile) {
+      return true; // El perfil ya existe
+    }
+    
+    // Si no existe, obtener datos del usuario de auth
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      console.error('Error obteniendo usuario:', userError);
+      return false;
+    }
+    
+    // Crear el perfil
+    const { error: createError } = await supabase
+      .from('profiles')
+      .insert([{
+        id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.full_name || user.email,
+        role: user.user_metadata?.role || 'freelancer',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }]);
+    
+    if (createError) {
+      console.error('Error creando perfil:', createError);
+      return false;
+    }
+    
+    console.log('✅ Perfil creado exitosamente para:', user.email);
+    return true;
+    
+  } catch (error) {
+    console.error('Error en ensureProfileExists:', error);
+    return false;
+  }
+};
+
 // Mock data para el feed de trabajos (fallback)
 const mockJobFeed = [
   {
@@ -308,36 +360,156 @@ export const unlikeJob = async (jobId) => {
 };
 
 /**
- * Guarda un trabajo
- * @param {string} jobId - ID del trabajo
- * @returns {Promise<boolean>} Éxito de la operación
+ * Guarda un trabajo en saved_proposals
+ * @param {string} jobId - ID del trabajo (proposal_id)
+ * @param {string} profileId - ID del perfil del usuario
+ * @returns {Promise<Object>} Resultado de la operación
  */
-export const saveJob = async (jobId) => {
-  await new Promise(resolve => setTimeout(resolve, 200));
-  console.log(`Trabajo ${jobId} guardado`);
-  return true;
+export const saveJob = async (jobId, profileId) => {
+  try {
+    const { data, error } = await supabase
+      .from('saved_proposals')
+      .insert([
+        {
+          profile_id: profileId,
+          proposal_id: parseInt(jobId)
+        }
+      ])
+      .select();
+    
+    if (error) {
+      // Si ya existe, no es realmente un error
+      if (error.code === '23505') {
+        console.log('Trabajo ya guardado previamente');
+        return { success: true, alreadyExists: true };
+      }
+      throw error;
+    }
+    
+    console.log('Trabajo guardado exitosamente:', data);
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error al guardar trabajo:', error);
+    throw new Error(error.message || 'Error al guardar el trabajo');
+  }
 };
 
 /**
  * Quita un trabajo de guardados
- * @param {string} jobId - ID del trabajo
- * @returns {Promise<boolean>} Éxito de la operación
+ * @param {string} jobId - ID del trabajo (proposal_id)
+ * @param {string} profileId - ID del perfil del usuario
+ * @returns {Promise<Object>} Resultado de la operación
  */
-export const unsaveJob = async (jobId) => {
-  await new Promise(resolve => setTimeout(resolve, 200));
-  console.log(`Trabajo ${jobId} removido de guardados`);
-  return true;
+export const unsaveJob = async (jobId, profileId) => {
+  try {
+    const { error } = await supabase
+      .from('saved_proposals')
+      .delete()
+      .eq('profile_id', profileId)
+      .eq('proposal_id', parseInt(jobId));
+    
+    if (error) throw error;
+    
+    console.log('Trabajo removido de guardados');
+    return { success: true };
+  } catch (error) {
+    console.error('Error al remover trabajo guardado:', error);
+    throw new Error(error.message || 'Error al remover trabajo de guardados');
+  }
 };
 
 /**
- * Aplica a un trabajo
- * @param {string} jobId - ID del trabajo
- * @returns {Promise<boolean>} Éxito de la operación
+ * Verifica si el usuario ya aplicó a una propuesta
+ * @param {string} jobId - ID del trabajo (proposal_id)
+ * @param {string} freelancerId - ID del freelancer
+ * @returns {Promise<boolean>} True si ya aplicó
  */
-export const applyToJob = async (jobId) => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  console.log(`Aplicación enviada al trabajo ${jobId}`);
-  return true;
+export const hasAppliedToJob = async (jobId, freelancerId) => {
+  try {
+    const { data, error } = await supabase
+      .from('proposal_applicants')
+      .select('*')
+      .eq('proposal_id', parseInt(jobId))
+      .eq('freelancer_id', freelancerId)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error verificando aplicación:', error);
+      return false;
+    }
+    
+    return !!data;
+  } catch (error) {
+    console.error('Error verificando aplicación:', error);
+    return false;
+  }
+};
+
+/**
+ * Aplica a un trabajo (crea registro en proposal_applicants)
+ * @param {Object} applicationData - Datos de la aplicación
+ * @param {string} applicationData.jobId - ID del trabajo (proposal_id)
+ * @param {string} applicationData.freelancerId - ID del freelancer
+ * @param {string} applicationData.coverLetter - Carta de presentación
+ * @returns {Promise<Object>} Resultado de la operación
+ */
+export const applyToJob = async (applicationData) => {
+  try {
+    const { jobId, freelancerId, coverLetter } = applicationData;
+    
+    // Validar datos requeridos
+    if (!jobId || !freelancerId) {
+      throw new Error('JobId y FreelancerId son requeridos');
+    }
+    
+    if (!coverLetter || coverLetter.trim().length < 50) {
+      throw new Error('La carta de presentación debe tener al menos 50 caracteres');
+    }
+    
+    // IMPORTANTE: Verificar/crear perfil antes de aplicar
+    const profileExists = await ensureProfileExists(freelancerId);
+    if (!profileExists) {
+      throw new Error('No se pudo verificar tu perfil. Por favor intenta cerrar sesión y volver a entrar.');
+    }
+    
+    // Verificar si ya aplicó antes
+    const alreadyApplied = await hasAppliedToJob(jobId, freelancerId);
+    if (alreadyApplied) {
+      throw new Error('Ya has aplicado a esta propuesta anteriormente');
+    }
+    
+    // Insertar aplicación
+    const { data, error } = await supabase
+      .from('proposal_applicants')
+      .insert([
+        {
+          proposal_id: parseInt(jobId),
+          freelancer_id: freelancerId,
+          cover_letter: coverLetter.trim(),
+          status: 'postulado'
+        }
+      ])
+      .select();
+    
+    if (error) {
+      // Mejorar mensaje de error
+      if (error.code === '23503') {
+        throw new Error('Tu perfil no está completamente configurado. Por favor completa tu perfil antes de aplicar.');
+      }
+      throw error;
+    }
+    
+    console.log('Aplicación enviada exitosamente:', data);
+    return { 
+      success: true, 
+      data: data[0],
+      message: '¡Aplicación enviada con éxito!' 
+    };
+    
+  } catch (error) {
+    console.error('Error al aplicar al trabajo:', error);
+    throw new Error(error.message || 'Error al enviar la aplicación');
+  }
 };
 
 /**
