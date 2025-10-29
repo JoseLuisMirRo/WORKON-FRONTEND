@@ -68,12 +68,11 @@ export const FeedPage = () => {
 
           {/* Main Feed */}
           <main className="lg:col-span-6">
-            {/* Search and Sort */}
+            {/* Search Bar */}
             <div className="mb-6">
               <SearchBar
+                value={filters.search}
                 onSearch={searchJobs}
-                sortBy={filters.sortBy}
-                onSortChange={(value) => updateFilter('sortBy', value)}
               />
             </div>
 
