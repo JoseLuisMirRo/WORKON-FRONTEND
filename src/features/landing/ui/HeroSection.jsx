@@ -23,61 +23,37 @@ export function HeroSection() {
 
           {/* Título principal */}
           <h1 className="text-5xl font-bold tracking-tight sm:text-6xl md:text-7xl lg:text-8xl">
-            <span className="block bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-slide-up" style={{ backgroundSize: '200% auto' }}>
-              El futuro del freelancing
+            <span className="block text-white animate-slide-up">
+              El futuro del freelancing es
             </span>
             <span className="block bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent animate-slide-up" style={{ animationDelay: '0.1s' }}>
-              es descentralizado
+              descentralizado
             </span>
           </h1>
 
           {/* Descripción */}
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl animate-slide-up" style={{ animationDelay: '0.2s' }}>
-            Conecta con clientes de todo el mundo, cobra al instante con criptomonedas y 
+            Conecta con clientes de todo el mundo, cobra al instante con criptomonedas y
             construye tu reputación verificable en la blockchain.
           </p>
 
           {/* Botones CTA */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up" style={{ animationDelay: '0.3s' }}>
-            <Button asChild size="lg" className="group w-full sm:w-auto">
+            <Button asChild size="lg" className="group w-full sm:w-auto bg-gradient-to-r from-primary via-accent to-primary hover:shadow-xl hover:shadow-primary/50 hover:scale-105 transition-all duration-300 border-0" style={{ backgroundSize: '200% auto' }}>
               <Link to="/feed" className="flex items-center gap-2">
-                Explorar Proyectos
+                Crear Perfil
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" size={20} />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="w-full sm:w-auto border-accent/50 hover:border-accent">
+            <Button asChild variant="outline" size="lg" className="w-full sm:w-auto glass border-2 border-white/30 hover:border-white/60 hover:bg-white/10 backdrop-blur-sm hover:scale-105 transition-all duration-300">
               <Link to="/feed">
                 Publicar Trabajo
               </Link>
             </Button>
           </div>
-
-          {/* Estadísticas */}
-          <div className="grid grid-cols-2 gap-8 pt-12 md:grid-cols-4 animate-slide-up" style={{ animationDelay: '0.4s' }}>
-            <div className="space-y-2">
-              <p className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                50K+
-              </p>
-              <p className="text-sm text-muted-foreground">Freelancers activos</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                $10M+
-              </p>
-              <p className="text-sm text-muted-foreground">Pagos procesados</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                15K+
-              </p>
-              <p className="text-sm text-muted-foreground">Proyectos completados</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                99.8%
-              </p>
-              <p className="text-sm text-muted-foreground">Satisfacción</p>
-            </div>
+          {/* Logo Stellar */}
+          <div className="flex items-center justify-center gap-2">
+            <img src="/stellar.png" alt="Stellar" className="h-10 w-10" />
           </div>
 
           {/* Trust badge */}
