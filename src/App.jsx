@@ -4,6 +4,8 @@ import { LandingPage } from './features/landing'
 import { FeedPage } from './features/feed'
 import { MyJobsPage } from './features/my-jobs'
 import { MessagesPage } from './features/messages'
+import { EmployerDashboard } from './features/employer'
+import { CreateFreelancerProfile, CreateEmployerProfile } from './features/profile'
 
 function App() {
   return (
@@ -57,6 +59,24 @@ function App() {
                 <h1 className="text-4xl font-bold mb-4">Configuración</h1>
                 <p className="text-muted-foreground">Esta sección está en desarrollo</p>
               </div>
+            </>
+          } />
+          <Route path="/empleador" element={
+            <>
+              <Navbar />
+              <EmployerDashboard />
+            </>
+          } />
+          <Route path="/crear-perfil-freelancer" element={
+            <>
+              <Navbar />
+              <CreateFreelancerProfile />
+            </>
+          } />
+          <Route path="/crear-perfil-empresa" element={
+            <>
+              <Navbar />
+              <CreateEmployerProfile />
             </>
           } />
         </Routes>

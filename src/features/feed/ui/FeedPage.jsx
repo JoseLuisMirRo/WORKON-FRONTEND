@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { useFeedController } from '../controllers/useFeedController'
 import { Loading } from './Loading'
 import { SearchBar } from './SearchBar'
 import { JobCard } from './JobCard'
 import { FeedFilters } from './FeedFilters'
 import { FeedStats } from './FeedStats'
+import { JobApplicationModal } from './JobApplicationModal'
 import { Card } from '../../../components/ui/Card'
 import { Button } from '../../../components/ui/Button'
 
@@ -25,13 +27,24 @@ export const FeedPage = () => {
     loadMoreJobs,
   } = useFeedController()
 
+  const [selectedJob, setSelectedJob] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
   if (loading) {
     return <Loading />
   }
 
-  const handleApply = (jobId) => {
-    applyToJob(jobId)
-    alert('¡Aplicación enviada con éxito!')
+  const handleApplyClick = (job) => {
+    setSelectedJob(job)
+    setIsModalOpen(true)
+  }
+
+  const handleConfirmApplication = (applicationData) => {
+    applyToJob(applicationData.jobId)
+    console.log('Aplicación enviada:', applicationData)
+    
+    // Mostrar notificación de éxito
+    alert(`¡Aplicación enviada con éxito!\n\nPresupuesto: $${applicationData.proposedBudget} USDC\nTiempo estimado: ${applicationData.estimatedDays} días`)
   }
 
   const handleSkillClick = (skill) => {
@@ -80,7 +93,7 @@ export const FeedPage = () => {
                     isSaved={savedJobs.has(job.id)}
                     onLike={toggleLike}
                     onSave={toggleSave}
-                    onApply={handleApply}
+                    onApply={handleApplyClick}
                   />
                 ))
               )}
@@ -110,6 +123,14 @@ export const FeedPage = () => {
           </aside>
         </div>
       </div>
+
+      {/* Modal de aplicación */}
+      <JobApplicationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        job={selectedJob}
+        onConfirm={handleConfirmApplication}
+      />
     </div>
   )
 }

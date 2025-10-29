@@ -4,7 +4,7 @@ import { Button } from '../../../components/ui/Button'
 import { Avatar, AvatarImage, AvatarFallback } from '../../../components/ui/Avatar'
 import { Calendar, Wallet, MessageCircle, Clock } from '../../../components/ui/Icons'
 
-export function MyJobCard({ job }) {
+export function MyJobCard({ job, onViewDetails }) {
   const getStatusColor = (status) => {
     const colors = {
       'en-progreso': 'default',
@@ -116,7 +116,11 @@ export function MyJobCard({ job }) {
             >
               <MessageCircle className="h-4 w-4" size={16} />
             </Button>
-            <Button size="sm" className="shadow-lg">
+            <Button 
+              size="sm" 
+              className="shadow-lg"
+              onClick={() => onViewDetails && onViewDetails(job)}
+            >
               Ver detalles
             </Button>
           </div>

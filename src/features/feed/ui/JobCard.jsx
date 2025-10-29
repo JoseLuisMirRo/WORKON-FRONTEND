@@ -4,7 +4,7 @@ import { Button } from '../../../components/ui/Button'
 import { Avatar, AvatarImage, AvatarFallback } from '../../../components/ui/Avatar'
 import { Wallet, Calendar, Star, Clock } from '../../../components/ui/Icons'
 
-export function JobCard({ job }) {
+export function JobCard({ job, onApply }) {
   const getBudgetColor = (budget) => {
     if (budget >= 3000) return 'success'
     if (budget >= 1000) return 'accent'
@@ -130,6 +130,7 @@ export function JobCard({ job }) {
           <Button 
             size="sm" 
             className="group/btn shadow-lg"
+            onClick={() => onApply && onApply(job)}
           >
             Aplicar
             <svg 

@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { Button } from '../../../components/ui/Button'
 import { useMyJobsController } from '../controllers/useMyJobsController'
 import { MyJobCard } from './MyJobCard'
 import { JobStats } from './JobStats'
+import { JobDetailsModal } from './JobDetailsModal'
 
 export const MyJobsPage = () => {
   const {
@@ -12,6 +14,14 @@ export const MyJobsPage = () => {
     changeFilter,
     toggleDeliverable,
   } = useMyJobsController()
+
+  const [selectedJob, setSelectedJob] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleViewDetails = (job) => {
+    setSelectedJob(job)
+    setIsModalOpen(true)
+  }
 
   const filters = [
     { value: 'all', label: 'Todos' },
@@ -70,11 +80,19 @@ export const MyJobsPage = () => {
                 key={job.id}
                 job={job}
                 onToggleDeliverable={toggleDeliverable}
+                onViewDetails={handleViewDetails}
               />
             ))
           )}
         </div>
       </div>
+
+      {/* Modal de detalles */}
+      <JobDetailsModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        job={selectedJob}
+      />
     </div>
   )
 }
