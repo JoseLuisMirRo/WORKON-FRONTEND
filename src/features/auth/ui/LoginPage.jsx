@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '../../../components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card'
-import { CheckCircle2, AlertCircle, User, Briefcase } from '../../../components/ui/Icons'
+import { AlertCircle, User, Briefcase } from '../../../components/ui/Icons'
 import { Logo } from '../../../components/Logo'
 import { useAuth } from '../../../contexts/AuthContext'
 
@@ -28,8 +28,8 @@ export const LoginPage = () => {
       setError(null)
       const result = await login(formData.email, formData.password)
       
-      // Redirigir según el tipo de usuario
-      if (result.user.type === 'employer') {
+      // Redirigir según el rol del usuario
+      if (result.user.role === 'employer') {
         navigate('/empleador')
       } else {
         navigate('/feed')
@@ -83,21 +83,6 @@ export const LoginPage = () => {
                   </CardContent>
                 </Card>
               )}
-
-              {/* Datos de prueba */}
-              <Card className="border-accent/30 bg-accent/5">
-                <CardContent className="p-3 space-y-2">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle2 className="h-4 w-4 text-accent" size={16} />
-                    <p className="text-xs font-medium">Usuarios de prueba:</p>
-                  </div>
-                  <div className="space-y-1 text-xs text-muted-foreground ml-6">
-                    <p><strong>Freelancer:</strong> freelancer@workon.com</p>
-                    <p><strong>Empleador:</strong> empleador@workon.com</p>
-                    <p className="text-accent">Contraseña: password123</p>
-                  </div>
-                </CardContent>
-              </Card>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Email */}

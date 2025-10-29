@@ -92,32 +92,50 @@ export function Navbar() {
               <LogoIcon size={50} className="group-hover:scale-105 transition-transform" />
             </Link>
 
-            {/* Menú Desktop */}
+            {/* Menú Desktop - Varía según el rol */}
             <div className="hidden md:flex items-center gap-2">
-              <Link to="/feed">
-                <Button
-                  variant={isActive('/feed') ? 'default' : 'ghost'}
-                  size="sm"
-                  className={cn(
-                    "transition-all duration-200",
-                    !isActive('/feed') && "hover:text-accent"
-                  )}
-                >
-                  Feed
-                </Button>
-              </Link>
-              <Link to="/mis-trabajos">
-                <Button
-                  variant={isActive('/mis-trabajos') ? 'default' : 'ghost'}
-                  size="sm"
-                  className={cn(
-                    "transition-all duration-200",
-                    !isActive('/mis-trabajos') && "hover:text-accent"
-                  )}
-                >
-                  Mis Trabajos
-                </Button>
-              </Link>
+              {user?.role === 'freelancer' ? (
+                <>
+                  <Link to="/feed">
+                    <Button
+                      variant={isActive('/feed') ? 'default' : 'ghost'}
+                      size="sm"
+                      className={cn(
+                        "transition-all duration-200",
+                        !isActive('/feed') && "hover:text-accent"
+                      )}
+                    >
+                      Feed
+                    </Button>
+                  </Link>
+                  <Link to="/mis-trabajos">
+                    <Button
+                      variant={isActive('/mis-trabajos') ? 'default' : 'ghost'}
+                      size="sm"
+                      className={cn(
+                        "transition-all duration-200",
+                        !isActive('/mis-trabajos') && "hover:text-accent"
+                      )}
+                    >
+                      Mis Trabajos
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <Link to="/empleador">
+                  <Button
+                    variant={isActive('/empleador') ? 'default' : 'ghost'}
+                    size="sm"
+                    className={cn(
+                      "transition-all duration-200",
+                      !isActive('/empleador') && "hover:text-accent"
+                    )}
+                  >
+                    Dashboard
+                  </Button>
+                </Link>
+              )}
+              
               <Link to="/mensajes">
                 <Button
                   variant={isActive('/mensajes') ? 'default' : 'ghost'}
@@ -193,7 +211,7 @@ export function Navbar() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link to="/perfil" className="flex items-center cursor-pointer">
+                    <Link to={user?.role === 'freelancer' ? '/perfil' : '/empleador'} className="flex items-center cursor-pointer">
                       <User className="mr-2 h-4 w-4" size={16} />
                       <span>Mi Perfil</span>
                     </Link>
@@ -254,24 +272,37 @@ export function Navbar() {
           {/* Menú */}
           <div className="relative bg-background border-b border-border shadow-lg animate-in slide-in-from-top duration-200">
             <div className="container mx-auto px-4 py-4 space-y-3">
-              {/* Enlaces de navegación */}
-              <Link to="/feed" onClick={closeMobileMenu}>
-                <Button
-                  variant={isActive('/feed') ? 'default' : 'ghost'}
-                  className="w-full justify-start text-left"
-                >
-                  Feed
-                </Button>
-              </Link>
+              {/* Enlaces de navegación - Varía según el rol */}
+              {user?.role === 'freelancer' ? (
+                <>
+                  <Link to="/feed" onClick={closeMobileMenu}>
+                    <Button
+                      variant={isActive('/feed') ? 'default' : 'ghost'}
+                      className="w-full justify-start text-left"
+                    >
+                      Feed
+                    </Button>
+                  </Link>
 
-              <Link to="/mis-trabajos" onClick={closeMobileMenu}>
-                <Button
-                  variant={isActive('/mis-trabajos') ? 'default' : 'ghost'}
-                  className="w-full justify-start text-left"
-                >
-                  Mis Trabajos
-                </Button>
-              </Link>
+                  <Link to="/mis-trabajos" onClick={closeMobileMenu}>
+                    <Button
+                      variant={isActive('/mis-trabajos') ? 'default' : 'ghost'}
+                      className="w-full justify-start text-left"
+                    >
+                      Mis Trabajos
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <Link to="/empleador" onClick={closeMobileMenu}>
+                  <Button
+                    variant={isActive('/empleador') ? 'default' : 'ghost'}
+                    className="w-full justify-start text-left"
+                  >
+                    Dashboard
+                  </Button>
+                </Link>
+              )}
 
               <Link to="/mensajes" onClick={closeMobileMenu}>
                 <Button
@@ -310,7 +341,7 @@ export function Navbar() {
                 </div>
 
                 {/* Opciones adicionales */}
-                <Link to="/perfil" onClick={closeMobileMenu}>
+                <Link to={user?.role === 'freelancer' ? '/perfil' : '/empleador'} onClick={closeMobileMenu}>
                   <Button variant="ghost" className="w-full justify-start text-left">
                     <User className="mr-2 h-4 w-4" size={16} />
                     Mi Perfil
