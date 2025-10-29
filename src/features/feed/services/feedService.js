@@ -62,7 +62,7 @@ const mockJobFeed = [
     title: "Desarrollador Full Stack Senior",
     description:
       "Buscamos un desarrollador full stack con experiencia en Next.js, React y Node.js para proyecto de 3 meses. El proyecto incluye desarrollo de plataforma e-commerce con integración de pagos.",
-    budget: "1,200 USDC",
+    budget: 1200,
     budgetType: "Proyecto completo",
     location: "Remoto",
     timePosted: "Hace 2 horas",
@@ -81,7 +81,7 @@ const mockJobFeed = [
     title: "Diseñador UI/UX para App Mobile",
     description:
       "Necesitamos diseñador con experiencia en aplicaciones móviles para crear el diseño completo de una app de fitness. Incluye wireframes, prototipos y sistema de diseño.",
-    budget: "800 USDC",
+    budget: 800,
     budgetType: "Proyecto completo",
     location: "Remoto",
     timePosted: "Hace 5 horas",
@@ -100,7 +100,7 @@ const mockJobFeed = [
     title: "Desarrollador Blockchain Soroban",
     description:
       "Startup busca desarrollador con experiencia en Stellar/Soroban para implementar smart contracts de marketplace. Proyecto innovador con potencial de largo plazo.",
-    budget: "2,000 USDC",
+    budget: 2000,
     budgetType: "Proyecto completo",
     location: "Remoto",
     timePosted: "Hace 1 día",
@@ -119,7 +119,7 @@ const mockJobFeed = [
     title: "Content Writer & SEO Specialist",
     description:
       "Agencia de marketing busca redactor de contenido con conocimientos de SEO para crear artículos de blog, landing pages y contenido para redes sociales.",
-    budget: "600 USDC",
+    budget: 600,
     budgetType: "Mensual",
     location: "Remoto",
     timePosted: "Hace 1 día",
@@ -138,7 +138,7 @@ const mockJobFeed = [
     title: "Data Scientist - Machine Learning",
     description:
       "Empresa líder en análisis de datos busca científico de datos para proyecto de predicción de ventas usando ML. Experiencia con Python, TensorFlow y análisis estadístico.",
-    budget: "1,500 USDC",
+    budget: 1500,
     budgetType: "Proyecto completo",
     location: "Híbrido - Buenos Aires",
     timePosted: "Hace 2 días",
@@ -194,7 +194,7 @@ const transformProposalToJob = (proposal) => {
     id: proposal.id.toString(),
     title: proposal.title,
     description: proposal.description || 'Sin descripción',
-    budget: `${parseFloat(proposal.total_payment).toLocaleString('es-AR')} USDC`,
+    budget: parseFloat(proposal.total_payment), // Solo el número, sin "USDC"
     budgetType: 'Proyecto completo',
     budgetRaw: parseFloat(proposal.total_payment),
     status: proposal.status,

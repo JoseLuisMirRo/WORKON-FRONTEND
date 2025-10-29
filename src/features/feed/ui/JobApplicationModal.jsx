@@ -153,7 +153,7 @@ export function JobApplicationModal({ isOpen, onClose, job, onConfirm }) {
                 <Wallet className="h-4 w-4 text-accent" size={16} />
                 <div>
                   <p className="text-xs text-muted-foreground">Presupuesto</p>
-                  <p className="text-sm font-semibold">${job.budget?.toLocaleString()} USDC</p>
+                  <p className="text-sm font-semibold">{job.budget?.toLocaleString()} USDC</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -201,7 +201,7 @@ export function JobApplicationModal({ isOpen, onClose, job, onConfirm }) {
               step="100"
             />
             <p className="text-xs text-muted-foreground">
-              Presupuesto del cliente: ${job.budget?.toLocaleString()} USDC
+              Presupuesto del cliente: {job.budget?.toLocaleString()} USDC
             </p>
           </div>
 
