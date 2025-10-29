@@ -4,16 +4,18 @@ import { Button } from '../../../components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card'
 import { CheckCircle2, AlertCircle, User, Briefcase } from '../../../components/ui/Icons'
 import { Logo } from '../../../components/Logo'
-import { useAuthController } from '../controllers/useAuthController'
+import { useAuth } from '../../../contexts/AuthContext'
 
 export const LoginPage = () => {
   const navigate = useNavigate()
-  const { handleLogin, loading, error } = useAuthController()
+  const { login } = useAuth()
   
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
   const [showResetPassword, setShowResetPassword] = useState(false)
   const [resetEmail, setResetEmail] = useState('')
   const [resetSuccess, setResetSuccess] = useState(false)
@@ -22,7 +24,9 @@ export const LoginPage = () => {
     e.preventDefault()
     
     try {
-      const result = await handleLogin(formData.email, formData.password)
+      setLoading(true)
+      setError(null)
+      const result = await login(formData.email, formData.password)
       
       // Redirigir según el tipo de usuario
       if (result.user.type === 'employer') {
@@ -31,8 +35,10 @@ export const LoginPage = () => {
         navigate('/feed')
       }
     } catch (err) {
-      // El error ya se maneja en el controller
+      setError(err.message || 'Error al iniciar sesión')
       console.error('Login error:', err)
+    } finally {
+      setLoading(false)
     }
   }
 
