@@ -11,18 +11,16 @@ export const EditProfileModal = ({ section, profile, onClose, onSave }) => {
         return profile.workInterests || {}
       case 'basic':
         return {
-          firstName: profile.firstName || '',
-          lastName: profile.lastName || '',
-          title: profile.title || '',
+          full_name: profile.full_name || '',
           bio: profile.bio || '',
           email: profile.email || '',
-          phone: profile.phone || '',
-          location: profile.location || '',
-          hourlyRate: profile.hourlyRate || 30
+          wallet_address: profile.wallet_address || '',
+          portfolio_summary: profile.portfolio_summary || ''
         }
       case 'skills':
+        // Skills not in DB yet - return empty
         return { 
-          skills: profile.skills || [],
+          skills: [],
           currentSkill: { name: '', level: 50 }
         }
       default:
@@ -75,37 +73,14 @@ export const EditProfileModal = ({ section, profile, onClose, onSave }) => {
 
   const renderBasicForm = () => (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Nombre *</label>
-          <input
-            type="text"
-            value={formData.firstName}
-            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-            className="w-full px-4 py-3 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="Juan"
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Apellido *</label>
-          <input
-            type="text"
-            value={formData.lastName}
-            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-            className="w-full px-4 py-3 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="Pérez"
-          />
-        </div>
-      </div>
-
       <div className="space-y-2">
-        <label className="text-sm font-medium">Título Profesional *</label>
+        <label className="text-sm font-medium">Nombre Completo *</label>
         <input
           type="text"
-          value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          value={formData.full_name}
+          onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
           className="w-full px-4 py-3 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-          placeholder="ej: Full Stack Developer & Blockchain Specialist"
+          placeholder="Juan Pérez García"
         />
       </div>
 
@@ -120,51 +95,42 @@ export const EditProfileModal = ({ section, profile, onClose, onSave }) => {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Email *</label>
-          <input
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full px-4 py-3 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="tu@email.com"
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Teléfono</label>
-          <input
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            className="w-full px-4 py-3 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="+52 123 456 7890"
-          />
-        </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Resumen de Portfolio</label>
+        <textarea
+          value={formData.portfolio_summary}
+          onChange={(e) => setFormData({ ...formData, portfolio_summary: e.target.value })}
+          rows="3"
+          className="w-full px-4 py-3 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+          placeholder="Breve descripción de tu portafolio y especialidades..."
+        />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Ubicación *</label>
-          <input
-            type="text"
-            value={formData.location}
-            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-            className="w-full px-4 py-3 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="Ciudad, País"
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Tarifa por Hora (USD) *</label>
-          <input
-            type="number"
-            value={formData.hourlyRate}
-            onChange={(e) => setFormData({ ...formData, hourlyRate: Number(e.target.value) })}
-            className="w-full px-4 py-3 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-            min="5"
-            step="5"
-          />
-        </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Wallet Address (Stellar)</label>
+        <input
+          type="text"
+          value={formData.wallet_address}
+          onChange={(e) => setFormData({ ...formData, wallet_address: e.target.value })}
+          className="w-full px-4 py-3 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary font-mono text-sm"
+          placeholder="GABC..."
+        />
+        <p className="text-xs text-muted-foreground">
+          Dirección de tu wallet en Stellar para recibir pagos
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Email (solo lectura)</label>
+        <input
+          type="email"
+          value={formData.email}
+          disabled
+          className="w-full px-4 py-3 rounded-xl border border-input bg-muted text-muted-foreground cursor-not-allowed"
+        />
+        <p className="text-xs text-muted-foreground">
+          El email no se puede cambiar desde aquí
+        </p>
       </div>
     </div>
   )

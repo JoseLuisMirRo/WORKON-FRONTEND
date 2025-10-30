@@ -1,6 +1,295 @@
-// Mock data para perfiles
+import { supabase } from '../../../lib/supabaseClient'
 
-// Perfil de Freelancer
+/**
+ * Helper: Get initials from full name or email
+ * @param {string} fullName - Full name
+ * @param {string} email - Email address
+ * @returns {string} Initials (e.g., "AB")
+ */
+export const getInitials = (fullName, email) => {
+  const safe = (s) => (typeof s === 'string' ? s.trim() : '')
+  const name = safe(fullName)
+  
+  if (name) {
+    const parts = name.split(/\s+/).filter(Boolean)
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+    if (parts.length === 1 && parts[0].length >= 2) return (parts[0][0] + parts[0][1]).toUpperCase()
+    if (parts.length === 1) return parts[0][0].toUpperCase()
+  }
+  
+  const mail = safe(email)
+  if (mail) {
+    const local = mail.split('@')[0] || ''
+    if (local.length >= 2) return (local[0] + local[1]).toUpperCase()
+    if (local.length === 1) return local[0].toUpperCase()
+  }
+  
+  return '??'
+}
+
+/**
+ * Normalize profile data from database
+ * @param {Object} row - Raw database row
+ * @returns {Object} Normalized profile
+ */
+const normalizeProfile = (row) => {
+  if (!row) return null
+  
+  return {
+    id: row.id || '',
+    role: row.role || 'freelancer',
+    full_name: row.full_name || '',
+    email: row.email || '',
+    wallet_address: row.wallet_address || '',
+    rating: typeof row.rating === 'number' ? row.rating : 0,
+    bio: row.bio || '',
+    portfolio_summary: row.portfolio_summary || '',
+    created_at: row.created_at || '',
+    updated_at: row.updated_at || '',
+  }
+}
+
+/**
+ * Get current authenticated user
+ * @returns {Promise<Object|null>} Current user
+ */
+export const getCurrentUser = async () => {
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser()
+    if (error || !user) return null
+    return user
+  } catch (error) {
+    console.error('Error getting current user:', error)
+    return null
+  }
+}
+
+/**
+ * Ensure profile exists for user, create if missing
+ * @param {string} userId - User ID
+ * @returns {Promise<boolean>} Success
+ */
+export const ensureProfileExists = async (userId) => {
+  try {
+    const { data: existing, error: checkError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single()
+    
+    if (existing) return true
+    
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      console.error('Error getting user for profile creation:', userError)
+      return false
+    }
+    
+    const { error: createError } = await supabase
+      .from('profiles')
+      .insert([{
+        id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.full_name || user.email,
+        role: user.user_metadata?.role || 'freelancer',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }])
+    
+    if (createError) {
+      console.error('Error creating profile:', createError)
+      return false
+    }
+    
+    console.log('✅ Profile created for:', user.email)
+    return true
+  } catch (error) {
+    console.error('Error in ensureProfileExists:', error)
+    return false
+  }
+}
+
+/**
+ * Get my profile (current user)
+ * @returns {Promise<Object|null>} Profile data
+ */
+export const getMyProfile = async () => {
+  try {
+    const user = await getCurrentUser()
+    if (!user) return null
+    
+    await ensureProfileExists(user.id)
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, role, full_name, email, wallet_address, rating, bio, portfolio_summary, created_at, updated_at')
+      .eq('id', user.id)
+      .single()
+    
+    if (error) {
+      console.error('Error fetching profile:', error)
+      return null
+    }
+    
+    return normalizeProfile(data)
+  } catch (error) {
+    console.error('Error in getMyProfile:', error)
+    return null
+  }
+}
+
+/**
+ * Get complete freelancer profile with nested data (areas, portfolio, work history)
+ * Uses PostgREST nested queries for efficient data fetching
+ * @returns {Promise<{ok: boolean, data?: Object, error?: Object}>}
+ */
+export const getMyFreelancerProfileDeep = async () => {
+  try {
+    const user = await getCurrentUser()
+    if (!user) return { ok: false, error: { code: 'NO_AUTH', message: 'Not authenticated' } }
+    
+    await ensureProfileExists(user.id)
+    
+    // Nested SELECT with joins (PostgREST syntax)
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(`
+        id, role, full_name, email, wallet_address, rating, bio, portfolio_summary, created_at, updated_at,
+
+        profile_areas (
+          area_id,
+          areas ( id, name )
+        ),
+
+        portfolio_entries (
+          id, title, description, created_at,
+          portfolio_files ( id, storage_path, mime_type, uploaded_at )
+        ),
+
+        work_history (
+          id, title, description, finished_at, project_status, proposal_id, created_at
+        )
+      `)
+      .eq('id', user.id)
+      .single()
+    
+    if (error) {
+      console.error('Error fetching deep profile:', error)
+      return { ok: false, error: { code: error.code, message: error.message } }
+    }
+    
+    // Normalize nested data for UI
+    const areas = (data.profile_areas || [])
+      .map(pa => pa.areas?.name)
+      .filter(Boolean)
+    
+    const portfolio = (data.portfolio_entries || []).map(entry => {
+      const files = entry.portfolio_files || []
+      const coverFile = files.find(f => (f.mime_type || '').startsWith('image/'))
+      
+      return {
+        id: entry.id,
+        title: entry.title,
+        description: entry.description,
+        created_at: entry.created_at,
+        files,
+        cover_path: coverFile?.storage_path || null
+      }
+    })
+    
+    return {
+      ok: true,
+      data: {
+        id: data.id,
+        role: data.role,
+        full_name: data.full_name,
+        email: data.email,
+        wallet_address: data.wallet_address,
+        rating: Number(data.rating ?? 0),
+        bio: data.bio || '',
+        portfolio_summary: data.portfolio_summary || '',
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        areas,              // ['Web3', 'Data', ...]
+        portfolio,          // entries with files and cover_path
+        work_history: data.work_history || []
+      }
+    }
+  } catch (e) {
+    console.error('Error in getMyFreelancerProfileDeep:', e)
+    return { ok: false, error: { code: 'UNKNOWN', message: String(e) } }
+  }
+}
+
+/**
+ * Get signed URL for storage file (if bucket is private)
+ * @param {string} path - Storage path
+ * @param {number} expiresIn - Expiration in seconds (default 3600)
+ * @returns {Promise<{ok: boolean, data?: string, error?: Object}>}
+ */
+export const getSignedUrlForFile = async (path, expiresIn = 3600) => {
+  try {
+    if (!path) return { ok: true, data: null }
+    
+    const { data, error } = await supabase
+      .storage
+      .from('portfolios')
+      .createSignedUrl(path, expiresIn)
+    
+    if (error) return { ok: false, error: { code: error.code, message: error.message } }
+    return { ok: true, data: data?.signedUrl || null }
+  } catch (e) {
+    return { ok: false, error: { code: 'UNKNOWN', message: String(e) } }
+  }
+}
+
+/**
+ * Update my profile (allow-list: full_name, wallet_address, bio, portfolio_summary)
+ * @param {Object} updates - Fields to update
+ * @returns {Promise<Object|null>} Updated profile
+ */
+export const updateMyProfile = async (updates) => {
+  try {
+    const user = await getCurrentUser()
+    if (!user) throw new Error('No authenticated user')
+    
+    // Allow-list
+    const allowedFields = ['full_name', 'wallet_address', 'bio', 'portfolio_summary']
+    const safeUpdates = {}
+    
+    allowedFields.forEach(field => {
+      if (updates.hasOwnProperty(field)) {
+        safeUpdates[field] = updates[field]
+      }
+    })
+    
+    safeUpdates.updated_at = new Date().toISOString()
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(safeUpdates)
+      .eq('id', user.id)
+      .select('id, role, full_name, email, wallet_address, rating, bio, portfolio_summary, created_at, updated_at')
+      .single()
+    
+    if (error) {
+      console.error('Error updating profile:', error)
+      throw error
+    }
+    
+    console.log('✅ Profile updated:', safeUpdates)
+    return normalizeProfile(data)
+  } catch (error) {
+    console.error('Error in updateMyProfile:', error)
+    throw error
+  }
+}
+
+// ============================================
+// MOCK DATA (kept for backwards compatibility with sections that aren't migrated yet)
+// ============================================
+
+// Perfil de Freelancer (legacy mock)
 const mockFreelancerProfile = {
   id: "fr-1",
   type: "freelancer",
@@ -162,31 +451,64 @@ const mockEmployerProfile = {
 
 /**
  * Obtiene el perfil del freelancer
+ * @deprecated Use getMyFreelancerProfileDeep() instead for real data
  * @returns {Promise<Object>} Perfil del freelancer
  */
 export const fetchFreelancerProfile = async () => {
-  await new Promise(resolve => setTimeout(resolve, 500))
-  return mockFreelancerProfile
+  const dbProfile = await getMyProfile()
+  if (!dbProfile) return null
+  
+  return {
+    id: dbProfile.id,
+    type: 'freelancer',
+    role: dbProfile.role,
+    email: dbProfile.email,
+    full_name: dbProfile.full_name,
+    bio: dbProfile.bio,
+    wallet_address: dbProfile.wallet_address,
+    rating: dbProfile.rating,
+    portfolio_summary: dbProfile.portfolio_summary,
+    created_at: dbProfile.created_at,
+    updated_at: dbProfile.updated_at
+  }
 }
 
 /**
  * Actualiza el perfil del freelancer
+ * @deprecated Use updateMyProfile() directly
  * @param {Object} updates - Datos a actualizar
  * @returns {Promise<Object>} Perfil actualizado
  */
 export const updateFreelancerProfile = async (updates) => {
-  await new Promise(resolve => setTimeout(resolve, 500))
-  console.log('Perfil freelancer actualizado:', updates)
-  return { ...mockFreelancerProfile, ...updates }
+  const dbUpdates = {}
+  if (updates.full_name) dbUpdates.full_name = updates.full_name
+  if (updates.bio) dbUpdates.bio = updates.bio
+  if (updates.wallet_address) dbUpdates.wallet_address = updates.wallet_address
+  if (updates.portfolio_summary) dbUpdates.portfolio_summary = updates.portfolio_summary
+  
+  const updated = await updateMyProfile(dbUpdates)
+  return fetchFreelancerProfile()
 }
 
 /**
- * Obtiene el perfil del empleador
+ * Obtiene el perfil del empleador (uses real Supabase data + mock extensions)
  * @returns {Promise<Object>} Perfil del empleador
  */
 export const fetchEmployerProfile = async () => {
-  await new Promise(resolve => setTimeout(resolve, 500))
-  return mockEmployerProfile
+  const dbProfile = await getMyProfile()
+  if (!dbProfile) return mockEmployerProfile
+  
+  // Merge DB data with mock data structure for UI compatibility
+  return {
+    ...mockEmployerProfile,
+    id: dbProfile.id,
+    type: 'employer',
+    email: dbProfile.email,
+    companyName: dbProfile.full_name,
+    description: dbProfile.bio,
+    wallet_address: dbProfile.wallet_address,
+    rating: dbProfile.rating,
+  }
 }
 
 /**
@@ -195,9 +517,13 @@ export const fetchEmployerProfile = async () => {
  * @returns {Promise<Object>} Perfil actualizado
  */
 export const updateEmployerProfile = async (updates) => {
-  await new Promise(resolve => setTimeout(resolve, 500))
-  console.log('Perfil empleador actualizado:', updates)
-  return { ...mockEmployerProfile, ...updates }
+  const dbUpdates = {}
+  if (updates.companyName) dbUpdates.full_name = updates.companyName
+  if (updates.description) dbUpdates.bio = updates.description
+  if (updates.wallet_address) dbUpdates.wallet_address = updates.wallet_address
+  
+  const updated = await updateMyProfile(dbUpdates)
+  return fetchEmployerProfile()
 }
 
 /**

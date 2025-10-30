@@ -235,9 +235,9 @@ export function Navbar() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 hover:ring-2 hover:ring-accent/50 transition-all">
                     <Avatar className="h-10 w-10 ring-2 ring-primary/20">
-                      <AvatarImage src="/placeholder.svg?height=40&width=40" alt="Usuario" />
+                      <AvatarImage src={user?.profile?.avatar_url || "/placeholder.svg?height=40&width=40"} alt={user?.profile?.displayName || "Usuario"} />
                       <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold">
-                        JD
+                        {user?.profile?.initials || '??'}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -246,7 +246,7 @@ export function Navbar() {
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col gap-1">
                       <p className="text-sm font-medium leading-none">
-                        {user?.profile?.firstName ? `${user.profile.firstName} ${user.profile.lastName}` : 'Usuario'}
+                        {user?.profile?.displayName || 'Usuario'}
                       </p>
                       <p className="text-xs leading-none text-muted-foreground">{user?.email || 'usuario@ejemplo.com'}</p>
                     </div>
@@ -369,14 +369,14 @@ export function Navbar() {
               <div className="px-3 py-2">
                 <div className="flex items-center gap-3 mb-3">
                   <Avatar className="h-12 w-12 ring-2 ring-primary/20">
-                    <AvatarImage src="/placeholder.svg?height=48&width=48" alt="Usuario" />
+                    <AvatarImage src={user?.profile?.avatar_url || "/placeholder.svg?height=48&width=48"} alt={user?.profile?.displayName || "Usuario"} />
                     <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold">
-                      {user?.profile?.firstName?.[0] || 'U'}{user?.profile?.lastName?.[0] || 'S'}
+                      {user?.profile?.initials || '??'}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="text-sm font-medium">
-                      {user?.profile?.firstName ? `${user.profile.firstName} ${user.profile.lastName}` : 'Usuario'}
+                      {user?.profile?.displayName || 'Usuario'}
                     </p>
                     <p className="text-xs text-muted-foreground">{user?.email || 'usuario@ejemplo.com'}</p>
                   </div>
