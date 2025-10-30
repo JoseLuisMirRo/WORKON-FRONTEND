@@ -7,10 +7,12 @@ import { Calendar, Wallet, MessageCircle, Clock } from '../../../components/ui/I
 export function MyJobCard({ job, onViewDetails }) {
   const getStatusColor = (status) => {
     const colors = {
-      'pendiente': 'default',
+      'pendiente': 'secondary',
       'en_revision': 'warning',
       'liberado': 'success',
       'rechazado': 'destructive',
+      'seleccionado': 'accent',
+      'postulado': 'primary',
       // Legacy statuses for backward compatibility
       'en-progreso': 'default',
       'completado': 'success',

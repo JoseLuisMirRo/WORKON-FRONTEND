@@ -30,11 +30,18 @@ export const useMyJobsController = () => {
   const loadData = async () => {
     try {
       setLoading(true)
-      const [jobsData, statsData] = await Promise.all([
+      const [workHistoryJobs, applications, statsData] = await Promise.all([
         myJobsService.fetchMyJobs(filter, userId),
+        myJobsService.fetchMyApplications(filter, userId),
         myJobsService.fetchJobStats(userId),
       ])
-      setJobs(jobsData)
+      // Merge and sort by createdAt desc when available
+      const merged = [...workHistoryJobs, ...applications].sort((a, b) => {
+        const da = a.createdAt ? new Date(a.createdAt).getTime() : 0
+        const db = b.createdAt ? new Date(b.createdAt).getTime() : 0
+        return db - da
+      })
+      setJobs(merged)
       setStats(statsData)
     } catch (error) {
       console.error('Error cargando trabajos:', error)

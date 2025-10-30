@@ -73,6 +73,9 @@ const statusLabels = {
   "en_revision": "En Revisión",
   "liberado": "Liberado",
   "rechazado": "Rechazado",
+  // Applicants (proposal_applicants) statuses
+  "postulado": "Postulado",
+  "seleccionado": "Seleccionado",
   // Legacy statuses for backward compatibility
   "en-progreso": "En Progreso",
   "completado": "Completado",
@@ -164,6 +167,51 @@ const transformWorkHistoryToJob = (workHistory) => {
 };
 
 /**
+ * Transform a proposal_applicant row (joined with proposals) into a Job card
+ * so it can be rendered together with work_history items
+ */
+const transformApplicantToJob = (appRow) => {
+  const proposal = appRow.proposals || {};
+  const skills = Array.isArray(proposal.tags) ? proposal.tags : [];
+
+  // Map applicant status to UI
+  // postulado → 10%, seleccionado → 50%, rechazado → 0%
+  let progress = 10;
+  let displayStatus = appRow.status || 'postulado';
+  if (displayStatus === 'seleccionado') progress = 50;
+  if (displayStatus === 'rechazado') progress = 0;
+
+  const createdAt = appRow.created_at || proposal.created_at;
+
+  return {
+    id: `app-${appRow.proposal_id}-${appRow.freelancer_id}`,
+    title: proposal.title || 'Sin título',
+    client: {
+      name: 'Empleador',
+      avatar: '/placeholder.svg?height=48&width=48',
+      verified: false,
+    },
+    amount: proposal.total_payment ? parseFloat(proposal.total_payment) : 0,
+    status: displayStatus,
+    progress: progress,
+    startDate: createdAt ? new Date(createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
+    deadline: '',
+    description: proposal.description || 'Sin descripción',
+    skills: skills,
+    // Keep references
+    proposalId: proposal.id,
+    application: {
+      status: appRow.status,
+      coverLetter: appRow.cover_letter,
+      timeEstimation: appRow.time_estimation,
+      proposedBudget: appRow.propossed_budget,
+      createdAt: appRow.created_at,
+    },
+    createdAt: createdAt,
+  };
+};
+
+/**
  * Obtiene todos los trabajos completados del usuario freelancer desde work_history
  * @param {string} filter - Filtro por status (pendiente, en_revision, liberado, rechazado, all)
  * @param {string} userId - ID del usuario freelancer
@@ -238,6 +286,57 @@ export const fetchMyJobs = async (filter = 'all', userId = null) => {
     console.error('Error in fetchMyJobs:', error);
     // Return mock data as fallback
     return filter === 'all' ? mockMyJobs : mockMyJobs.filter(job => job.status === filter);
+  }
+}
+
+/**
+ * Fetch applications (proposal_applicants) made by the freelancer
+ */
+export const fetchMyApplications = async (filter = 'all', userId = null) => {
+  try {
+    if (!userId) {
+      const storedUserId = localStorage.getItem('userId');
+      if (!storedUserId) return [];
+      userId = storedUserId;
+    }
+
+    let query = supabase
+      .from('proposal_applicants')
+      .select(`
+        *,
+        proposals (
+          id,
+          title,
+          description,
+          total_payment,
+          employer_id,
+          status,
+          tags,
+          created_at,
+          updated_at
+        )
+      `)
+      .eq('freelancer_id', userId);
+
+    if (filter !== 'all') {
+      // Only filter when it is one of the applicant statuses
+      if (['postulado', 'seleccionado', 'rechazado'].includes(filter)) {
+        query = query.eq('status', filter);
+      }
+    }
+
+    query = query.order('created_at', { ascending: false });
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('Error fetching applications:', error);
+      return [];
+    }
+
+    return (data || []).map(transformApplicantToJob);
+  } catch (error) {
+    console.error('Error in fetchMyApplications:', error);
+    return [];
   }
 }
 
