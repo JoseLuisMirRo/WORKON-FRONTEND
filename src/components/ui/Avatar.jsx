@@ -12,6 +12,9 @@ export const Avatar = ({ children, className = '' }) => {
 }
 
 export const AvatarImage = ({ src, alt }) => {
+  // Don't render if no valid src
+  if (!src) return null
+  
   return (
     <img 
       src={src} 
@@ -24,10 +27,13 @@ export const AvatarImage = ({ src, alt }) => {
   )
 }
 
-export const AvatarFallback = ({ children }) => {
+export const AvatarFallback = ({ children, className = '' }) => {
   return (
-    <div className="flex h-full w-full items-center justify-center rounded-full bg-muted">
-      <span className="text-sm font-medium text-muted-foreground">{children}</span>
+    <div className={cn(
+      "flex h-full w-full items-center justify-center rounded-full bg-muted text-sm font-medium text-muted-foreground",
+      className
+    )}>
+      {children}
     </div>
   )
 }

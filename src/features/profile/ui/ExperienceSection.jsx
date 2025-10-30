@@ -49,90 +49,79 @@ export const ExperienceSection = ({ profile, onEdit }) => {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {profile.experience?.map((exp, index) => (
-              <div key={exp.id} className="relative">
-                {/* Timeline line */}
-                {index < profile.experience.length - 1 && (
-                  <div className="absolute left-6 top-16 bottom-0 w-0.5 bg-border"></div>
-                )}
-                
-                <div className="flex gap-4 group">
-                  {/* Icon */}
-                  <div className="relative flex-shrink-0">
-                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 border-2 border-primary/30 flex items-center justify-center">
-                      <Briefcase className="h-6 w-6 text-primary" size={24} />
-                    </div>
-                    {exp.endDate === 'Presente' && (
-                      <div className="absolute -top-1 -right-1">
-                        <div className="h-3 w-3 rounded-full bg-green-400 animate-pulse"></div>
+            {/* Use work_history from DB */}
+            {profile.work_history && profile.work_history.length > 0 ? (
+              profile.work_history.map((work, index) => (
+                <div key={work.id} className="relative">
+                  {/* Timeline line */}
+                  {index < profile.work_history.length - 1 && (
+                    <div className="absolute left-6 top-16 bottom-0 w-0.5 bg-border"></div>
+                  )}
+                  
+                  <div className="flex gap-4 group">
+                    {/* Icon */}
+                    <div className="relative flex-shrink-0">
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 border-2 border-primary/30 flex items-center justify-center">
+                        <Briefcase className="h-6 w-6 text-primary" size={24} />
                       </div>
-                    )}
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 pb-6">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-lg">{exp.title}</h4>
-                        <p className="text-primary font-medium">{exp.company}</p>
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={onEdit}
-                      >
-                        <Edit className="h-4 w-4" size={16} />
-                      </Button>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-3">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" size={16} />
-                        <span>{formatDate(exp.startDate)} - {formatDate(exp.endDate)}</span>
-                      </div>
-                      <Badge variant="secondary" className="text-xs">
-                        {calculateDuration(exp.startDate, exp.endDate)}
-                      </Badge>
-                      {exp.location && (
-                        <>
-                          <span>•</span>
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-4 w-4" size={16} />
-                            <span>{exp.location}</span>
-                          </div>
-                        </>
+                      {work.project_status === 'completed' && work.finished_at && (
+                        <div className="absolute -top-1 -right-1">
+                          <div className="h-3 w-3 rounded-full bg-green-400"></div>
+                        </div>
                       )}
                     </div>
 
-                    <p className="text-muted-foreground leading-relaxed">
-                      {exp.description}
-                    </p>
-
-                    {exp.skills && exp.skills.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        {exp.skills.map((skill, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            {skill}
-                          </Badge>
-                        ))}
+                    {/* Content */}
+                    <div className="flex-1 pb-6">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-lg">{work.title}</h4>
+                          {work.project_status && (
+                            <Badge variant="secondary" className="text-xs mt-1">
+                              {work.project_status === 'completed' ? 'Completado' : 
+                               work.project_status === 'in_progress' ? 'En progreso' : 
+                               work.project_status}
+                            </Badge>
+                          )}
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={onEdit}
+                        >
+                          <Edit className="h-4 w-4" size={16} />
+                        </Button>
                       </div>
-                    )}
+
+                      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-3">
+                        {work.finished_at && (
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" size={16} />
+                            <span>Finalizado: {new Date(work.finished_at).toLocaleDateString('es-MX', { 
+                              year: 'numeric', 
+                              month: 'short' 
+                            })}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <p className="text-muted-foreground leading-relaxed">
+                        {work.description}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-
-            {(!profile.experience || profile.experience.length === 0) && (
+              ))
+            ) : (
               <div className="text-center py-12">
                 <Briefcase className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" size={48} />
                 <p className="text-muted-foreground mb-4">
-                  Aún no has agregado experiencia profesional
+                  Aún no tienes historial de proyectos completados
                 </p>
-                <Button onClick={() => setShowAddModal(true)} className="gap-2">
-                  <Plus className="h-4 w-4" size={16} />
-                  Agregar Primera Experiencia
-                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Los proyectos que completes aparecerán aquí automáticamente
+                </p>
               </div>
             )}
           </div>

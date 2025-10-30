@@ -2,6 +2,48 @@
 import { supabase } from '../../../lib/supabaseClient'
 
 /**
+ * Helper: Get initials from full name or email
+ */
+const getInitials = (fullName, email) => {
+  const safe = (s) => (typeof s === 'string' ? s.trim() : '')
+  const name = safe(fullName)
+  
+  if (name) {
+    const parts = name.split(/\s+/).filter(Boolean)
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+    if (parts.length === 1 && parts[0].length >= 2) return (parts[0][0] + parts[0][1]).toUpperCase()
+    if (parts.length === 1) return parts[0][0].toUpperCase()
+  }
+  
+  const mail = safe(email)
+  if (mail) {
+    const local = mail.split('@')[0] || ''
+    if (local.length >= 2) return (local[0] + local[1]).toUpperCase()
+    if (local.length === 1) return local[0].toUpperCase()
+  }
+  
+  return '??'
+}
+
+/**
+ * Enrich profile with derived fields
+ */
+const enrichProfile = (profile) => {
+  if (!profile) return profile
+  
+  const fullName = profile.full_name || ''
+  const email = profile.email || ''
+  const displayName = fullName.trim() || (email ? email.split('@')[0] : '')
+  const initials = getInitials(fullName, email)
+  
+  return {
+    ...profile,
+    displayName,
+    initials,
+  }
+}
+
+/**
  * Iniciar sesión
  * @param {string} email - Email del usuario
  * @param {string} password - Contraseña
@@ -32,16 +74,18 @@ export const login = async (email, password) => {
     localStorage.setItem('userId', data.user.id)
     localStorage.setItem('userRole', profile?.role || 'freelancer')
 
+    const enrichedProfile = enrichProfile(profile || {
+      full_name: data.user.user_metadata?.name || data.user.email,
+      email: data.user.email,
+      avatar_url: data.user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.email}`,
+    })
+
     return {
       user: {
         id: data.user.id,
         email: data.user.email,
         role: profile?.role || 'freelancer',
-        profile: profile || {
-          full_name: data.user.user_metadata?.name || data.user.email,
-          email: data.user.email,
-          avatar_url: data.user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.email}`,
-        },
+        profile: enrichedProfile,
       },
       token: data.session.access_token,
     }
@@ -96,15 +140,17 @@ export const register = async (userData) => {
       localStorage.setItem('userRole', userData.role)
     }
 
+    const enrichedProfile = enrichProfile({
+      full_name: userData.name,
+      email: userData.email,
+    })
+
     return {
       user: {
         id: data.user.id,
         email: data.user.email,
         role: userData.role,
-        profile: {
-          full_name: userData.name,
-          email: userData.email,
-        },
+        profile: enrichedProfile,
       },
       token: data.session?.access_token,
     }
@@ -156,16 +202,18 @@ export const getCurrentUser = async () => {
     // Obtener la sesión actual
     const { data: { session } } = await supabase.auth.getSession()
 
+    const enrichedProfile = enrichProfile(profile || {
+      full_name: user.user_metadata?.full_name || user.email,
+      email: user.email,
+      avatar_url: user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`,
+    })
+
     return {
       user: {
         id: user.id,
         email: user.email,
         role: profile?.role || localStorage.getItem('userRole') || 'freelancer',
-        profile: profile || {
-          full_name: user.user_metadata?.full_name || user.email,
-          email: user.email,
-          avatar_url: user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`,
-        },
+        profile: enrichedProfile,
       },
       token: session?.access_token,
     }
