@@ -1,3 +1,5 @@
+import { supabase } from '../../../lib/supabaseClient'
+
 // Mock data para empleador
 const mockEmployerProfile = {
   id: "emp-1",
@@ -198,5 +200,73 @@ export const fetchEmployerStats = async () => {
     avgResponseTime: "2 horas",
     successRate: mockEmployerProfile.successRate
   }
+}
+
+/**
+ * Inserta una propuesta en Supabase (tabla proposals)
+ * @param {Object} data { title, description, total_payment, employer_id, tags, selected_freelancer_id }
+ * @returns {Promise<Object>} Propuesta creada
+ */
+export const createProposal = async (data) => {
+  const payload = {
+    title: data.title,
+    description: data.description ?? null,
+    total_payment: typeof data.total_payment === 'number' ? data.total_payment : parseFloat(data.total_payment || 0),
+    employer_id: data.employer_id,
+    selected_freelancer_id: data.selected_freelancer_id ?? null,
+    status: data.status ?? 'publicada',
+    tags: Array.isArray(data.tags) ? data.tags : [],
+  }
+
+  const { data: inserted, error } = await supabase
+    .from('proposals')
+    .insert(payload)
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('Error inserting proposal:', error)
+    throw error
+  }
+
+  return inserted
+}
+
+/**
+ * Inserta milestones (deliverables) para una propuesta
+ * @param {number} proposalId
+ * @param {Array} deliverables [{ title, description, deadline }]
+ * @param {number} totalPayment monto total para distribuir (opcional)
+ */
+export const createMilestones = async (proposalId, deliverables = [], totalPayment = 0) => {
+  if (!proposalId || !Array.isArray(deliverables) || deliverables.length === 0) {
+    return []
+  }
+
+  const perAmount = Number(totalPayment) > 0
+    ? Number((Number(totalPayment) / deliverables.length).toFixed(2))
+    : 0
+
+  const rows = deliverables.map((d, idx) => ({
+    proposal_id: proposalId,
+    title: d.title,
+    description: d.description ?? null,
+    amount: d.amount != null ? Number(d.amount) : perAmount,
+    sort_order: (idx + 1),
+    status: 'pendiente',
+    due_date: d.deadline ? new Date(d.deadline).toISOString().slice(0, 10) : null,
+  }))
+
+  const { data, error } = await supabase
+    .from('milestones')
+    .insert(rows)
+    .select('*')
+
+  if (error) {
+    console.error('Error inserting milestones:', error)
+    throw error
+  }
+
+  return data
 }
 

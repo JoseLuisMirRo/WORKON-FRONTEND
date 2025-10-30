@@ -5,6 +5,7 @@ import { Badge } from '../../../components/ui/Badge'
 import { Card, CardContent } from '../../../components/ui/Card'
 import { CheckCircle2, AlertCircle, Wallet, Calendar, Plus, X, FileText } from '../../../components/ui/Icons'
 import { invokeContractMethod, callContractMethod } from '../../../service/contract/callContractMethods'
+import { createProposal, createMilestones } from '../services/employerService'
 import { getAddress } from '@stellar/freighter-api'
 
 export function CreateJobModal({ isOpen, onClose, onConfirm }) {
@@ -130,7 +131,33 @@ export function CreateJobModal({ isOpen, onClose, onConfirm }) {
 
         console.log('Job data with transaction:', jobDataWithTx)
 
-        // Call the onConfirm callback with the job data
+        // Insert proposal in Supabase
+        try {
+          const employerId = localStorage.getItem('userId')
+          if (!employerId) {
+            console.warn('No employer_id (userId) in localStorage; skipping DB insert')
+          } else {
+            const inserted = await createProposal({
+              title: formData.title,
+              description: formData.description,
+              total_payment: Number(formData.budget),
+              employer_id: employerId,
+              tags: formData.skills || [],
+              status: 'publicada',
+            })
+            console.log('Proposal inserted:', inserted)
+
+            // Insert milestones for this proposal (deliverables)
+            if (Array.isArray(formData.deliverables) && formData.deliverables.length > 0) {
+              const milestones = await createMilestones(inserted.id, formData.deliverables, Number(formData.budget))
+              console.log('Milestones inserted:', milestones?.length)
+            }
+          }
+        } catch (dbErr) {
+          console.error('Error inserting proposal to Supabase:', dbErr)
+        }
+
+        // Notify parent
         onConfirm(jobDataWithTx)
         
         // Reset form
