@@ -7,6 +7,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '../../../components/ui/Avat
 import { TrendingUp, Briefcase, Users, DollarSign, Clock, CheckCircle2 } from '../../../components/ui/Icons'
 import { CreateJobModal } from './CreateJobModal'
 import { EmployerJobCard } from './EmployerJobCard'
+import { EmployerJobDetailsModal } from './EmployerJobDetailsModal'
 
 export const EmployerDashboard = () => {
   const {
@@ -22,6 +23,8 @@ export const EmployerDashboard = () => {
   } = useEmployerController()
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [selectedJob, setSelectedJob] = useState(null)
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false)
 
   if (loading) {
     return (
@@ -208,6 +211,7 @@ export const EmployerDashboard = () => {
                 job={job}
                 onUpdate={updateJob}
                 onDelete={deleteJob}
+                onDetails={(j) => { setSelectedJob(j); setIsDetailsOpen(true); }}
               />
             ))
           )}
@@ -219,6 +223,13 @@ export const EmployerDashboard = () => {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onConfirm={handleCreateJob}
+      />
+
+      {/* Modal de detalles del trabajo */}
+      <EmployerJobDetailsModal
+        isOpen={isDetailsOpen}
+        onClose={() => { setIsDetailsOpen(false); setSelectedJob(null); }}
+        job={selectedJob}
       />
     </div>
   )
