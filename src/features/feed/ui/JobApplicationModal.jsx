@@ -5,6 +5,7 @@ import { Badge } from '../../../components/ui/Badge'
 import { Avatar, AvatarImage, AvatarFallback } from '../../../components/ui/Avatar'
 import { Wallet, Calendar, Clock, Star, AlertCircle, FileText, CheckCircle2 } from '../../../components/ui/Icons'
 import { Card, CardContent } from '../../../components/ui/Card'
+import { createProposalApplicant } from '../../employer/services/employerService'
 
 export function JobApplicationModal({ isOpen, onClose, job, onConfirm }) {
   const [coverLetter, setCoverLetter] = useState('')
@@ -12,6 +13,7 @@ export function JobApplicationModal({ isOpen, onClose, job, onConfirm }) {
   const [estimatedDays, setEstimatedDays] = useState(14)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
   if (!job) return null
 
@@ -26,15 +28,56 @@ export function JobApplicationModal({ isOpen, onClose, job, onConfirm }) {
     setError('')
     
     try {
-      await onConfirm({
+      // Persistir postulación en Supabase
+      const freelancerId = localStorage.getItem('userId')
+      if (!freelancerId) {
+        throw new Error('No se encontró tu sesión. Inicia sesión para postularte.')
+      }
+
+      console.log("sending");
+      const { application, alreadyApplied } = await createProposalApplicant({
+        proposal_id: job.id,
+        freelancer_id: freelancerId,
+        cover_letter: coverLetter.trim(),
+        time_estimation: estimatedDays,
+        propossed_budget: proposedBudget,
+        status: 'postulado',
+      })
+
+      console.log("application", application);
+      // Si ya había aplicado, mostrar error y NO resetear campos
+      console.log("alreadyApplied", alreadyApplied);
+      if (alreadyApplied) {
+        setError('Ya has aplicado a esta propuesta anteriormente')
+        setSuccess('')
+        return
+      }
+
+      // Notificar al padre (mantiene compatibilidad) solo en éxito real
+      await onConfirm?.({
         jobId: job.id,
         coverLetter: coverLetter.trim(),
         proposedBudget,
-        estimatedDays
+        estimatedDays,
+        application,
       })
-      onClose()
+
+      // Éxito: resetear y mostrar mensaje
+      setCoverLetter('')
+      setProposedBudget(job?.budgetRaw || 0)
+      setEstimatedDays(14)
+      setError('')
+      setSuccess('¡Tu postulación fue enviada correctamente!')
+
+      // Cerrar luego de un breve delay
+      setTimeout(() => {
+        setSuccess('')
+        setError('')
+        onClose()
+      }, 3000)
     } catch (err) {
       setError(err.message || 'Error al enviar la aplicación')
+      setSuccess('')
     } finally {
       setIsSubmitting(false)
     }
@@ -69,6 +112,15 @@ export function JobApplicationModal({ isOpen, onClose, job, onConfirm }) {
       }
     >
       <div className="space-y-6">
+        {/* Mensajes del servidor */}
+        {success && (
+          <Card className="border-success/30 bg-success/5">
+            <CardContent className="p-3 flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-success flex-shrink-0" size={16} />
+              <p className="text-sm text-success font-medium">{success}</p>
+            </CardContent>
+          </Card>
+        )}
         {/* Mensaje de error */}
         {error && (
           <Card className="border-destructive/30 bg-destructive/5">

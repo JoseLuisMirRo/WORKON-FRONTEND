@@ -426,14 +426,14 @@ export const unsaveJob = async (jobId, profileId) => {
  */
 export const hasAppliedToJob = async (jobId, freelancerId) => {
   try {
-    const { data, error } = await supabase
+  const { data, error } = await supabase
       .from('proposal_applicants')
       .select('*')
       .eq('proposal_id', parseInt(jobId))
       .eq('freelancer_id', freelancerId)
-      .single();
+      .maybeSingle();
     
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       console.error('Error verificando aplicación:', error);
       return false;
     }
@@ -475,7 +475,12 @@ export const applyToJob = async (applicationData) => {
     // Verificar si ya aplicó antes
     const alreadyApplied = await hasAppliedToJob(jobId, freelancerId);
     if (alreadyApplied) {
-      throw new Error('Ya has aplicado a esta propuesta anteriormente');
+      return {
+        success: true,
+        data: null,
+        alreadyApplied: true,
+        message: 'Ya has aplicado a esta propuesta anteriormente'
+      };
     }
     
     // Insertar aplicación
@@ -503,7 +508,8 @@ export const applyToJob = async (applicationData) => {
     return { 
       success: true, 
       data: data[0],
-      message: '¡Aplicación enviada con éxito!' 
+      alreadyApplied: false,
+      message: '¡Aplicación enviada con éxito!'
     };
     
   } catch (error) {

@@ -270,3 +270,48 @@ export const createMilestones = async (proposalId, deliverables = [], totalPayme
   return data
 }
 
+/**
+ * Inserta una postulación de freelancer a una propuesta
+ * @param {Object} data { proposal_id: number, freelancer_id: string, cover_letter?: string, time_estimation?: number, propossed_budget?: number }
+ */
+export const createProposalApplicant = async (data) => {
+  const payload = {
+    proposal_id: Number(data.proposal_id),
+    freelancer_id: data.freelancer_id,
+    status: data.status ?? 'postulado',
+    cover_letter: data.cover_letter ?? null,
+    time_estimation: data.time_estimation != null ? Number(data.time_estimation) : null,
+    propossed_budget: data.propossed_budget != null ? Number(data.propossed_budget) : null,
+  }
+
+  // Insert and gracefully handle duplicates (unique: proposal_id,freelancer_id)
+  const { data: inserted, error } = await supabase
+    .from('proposal_applicants')
+    .insert(payload)
+    .select('*')
+    .single()
+
+  if (error) {
+    // 409 or duplicate key -> fetch existing and return alreadyApplied
+    const isDuplicate = (error.code === '23505') || (error.details?.includes('already exists')) || (error.message?.toLowerCase().includes('duplicate')) || (error.status === 409)
+    if (isDuplicate) {
+      const { data: existing, error: fetchErr } = await supabase
+        .from('proposal_applicants')
+        .select('*')
+        .eq('proposal_id', payload.proposal_id)
+        .eq('freelancer_id', payload.freelancer_id)
+        .maybeSingle()
+
+      if (fetchErr) {
+        console.error('Error fetching existing applicant:', fetchErr)
+        throw fetchErr
+      }
+      return { application: existing, alreadyApplied: true }
+    }
+    console.error('Error inserting proposal applicant:', error)
+    throw error
+  }
+
+  return { application: inserted, alreadyApplied: false }
+}
+
