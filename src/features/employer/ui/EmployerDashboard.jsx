@@ -57,26 +57,29 @@ export const EmployerDashboard = () => {
             <Avatar className="h-20 w-20 ring-4 ring-primary/20">
               <AvatarImage src={profile?.avatar} alt={profile?.name} />
               <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-2xl font-bold">
-                {profile?.name?.split(' ').map(n => n[0]).join('')}
+                {profile?.initials || '??'}
               </AvatarFallback>
             </Avatar>
             
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <h1 className="text-3xl font-bold">{profile?.name}</h1>
-                {profile?.verified && (
-                  <Badge variant="accent" className="px-2 py-1">
-                    ✓ Verificado
-                  </Badge>
-                )}
+                <h1 className="text-3xl font-bold">{profile?.name || 'Empresa'}</h1>
+                {/* Verified badge removed - not in DB */}
               </div>
-              <p className="text-muted-foreground">{profile?.industry} • {profile?.location}</p>
+              <p className="text-muted-foreground">
+                {profile?.industry || 'Industria'} 
+                {profile?.location && profile.location !== 'No especificado' && ` • ${profile.location}`}
+              </p>
               <div className="flex items-center gap-4 text-sm">
-                <span className="flex items-center gap-1">
-                  ⭐ {profile?.rating} ({profile?.reviewsCount} reseñas)
-                </span>
-                <span>•</span>
-                <span>{profile?.jobsPosted} trabajos publicados</span>
+                {profile?.rating > 0 && (
+                  <>
+                    <span className="flex items-center gap-1">
+                      ⭐ {profile.rating.toFixed(1)} {profile.reviewsCount > 0 && `(${profile.reviewsCount} reseñas)`}
+                    </span>
+                    <span>•</span>
+                  </>
+                )}
+                <span>{profile?.jobsPosted || 0} trabajos publicados</span>
               </div>
             </div>
           </div>
@@ -101,7 +104,7 @@ export const EmployerDashboard = () => {
                     Trabajos Activos
                   </p>
                   <p className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                    {stats?.activeJobs}
+                    {stats?.activeJobs || 0}
                   </p>
                 </div>
                 <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
@@ -119,7 +122,7 @@ export const EmployerDashboard = () => {
                     Aplicaciones Totales
                   </p>
                   <p className="text-3xl font-bold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-                    {stats?.totalApplicants}
+                    {stats?.totalApplicants || 0}
                   </p>
                 </div>
                 <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center shadow-lg shadow-accent/30">
@@ -137,7 +140,7 @@ export const EmployerDashboard = () => {
                     Completados
                   </p>
                   <p className="text-3xl font-bold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-                    {stats?.completedJobs}
+                    {stats?.completedJobs || 0}
                   </p>
                 </div>
                 <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-success to-success/80 flex items-center justify-center shadow-lg shadow-success/30">
@@ -155,7 +158,7 @@ export const EmployerDashboard = () => {
                     Invertido
                   </p>
                   <p className="text-3xl font-bold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-                    ${(stats?.totalSpent / 1000).toFixed(0)}k
+                    ${((stats?.totalSpent || 0) / 1000).toFixed(1)}k
                   </p>
                 </div>
                 <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-warning to-warning/80 flex items-center justify-center shadow-lg shadow-warning/30">
