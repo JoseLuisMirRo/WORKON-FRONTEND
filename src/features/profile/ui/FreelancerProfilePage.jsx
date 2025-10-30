@@ -8,8 +8,10 @@ import {
   User, Briefcase, Award, Star, MapPin, Clock, DollarSign, 
   Mail, Phone, Globe, Github, Linkedin, Twitter, 
   Edit, Plus, Calendar, TrendingUp, CheckCircle2, Target,
-  Heart, Code, Zap, Shield, Trash2, ExternalLink, Wallet
+  Heart, Code, Zap, Shield, Trash2, ExternalLink, Wallet,
+  FileText, Video
 } from '../../../components/ui/Icons'
+import * as portfolioService from '../services/portfolioService'
 import { ExperienceSection } from './ExperienceSection'
 import { InterestsSection } from './InterestsSection'
 import { RatingsSection } from './RatingsSection'
@@ -87,6 +89,25 @@ export const FreelancerProfilePage = () => {
     } catch (error) {
       console.error('Error deleting portfolio:', error)
       alert('Error al eliminar el proyecto')
+    }
+  }
+
+  const handleOpenProject = async (project) => {
+    if (!project.files || project.files.length === 0) {
+      alert('Este proyecto no tiene archivos adjuntos')
+      return
+    }
+
+    // Find first image or first file
+    const imageFile = project.files.find(f => (f.mime_type || '').startsWith('image/'))
+    const targetFile = imageFile || project.files[0]
+
+    // Generate signed URL
+    const res = await portfolioService.getSignedUrl(targetFile.storage_path, 3600)
+    if (res.ok && res.data) {
+      window.open(res.data, '_blank', 'noopener,noreferrer')
+    } else {
+      alert('Error al abrir el archivo')
     }
   }
 
@@ -341,37 +362,84 @@ export const FreelancerProfilePage = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {portfolio.map((project) => (
-                      <Card key={project.id} hover className="overflow-hidden group relative">
-                        {/* Delete Button */}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeletePortfolio(project.id)}
-                          className="absolute top-2 right-2 z-10 bg-background/80 backdrop-blur-sm hover:bg-destructive hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 className="h-4 w-4" size={16} />
-                        </Button>
+                    {portfolio.map((project) => {
+                      // Helper: Get first file for preview logic
+                      const firstFile = project.files?.[0]
+                      const hasImage = project.image && !project.image.includes('placeholder')
+                      const imageCount = project.files?.filter(f => f.mime_type?.startsWith('image/')).length || 0
+                      
+                      // Determine file type icon for non-image previews
+                      let FileIcon = FileText
+                      if (firstFile?.mime_type?.startsWith('video/')) FileIcon = Video
+                      else if (firstFile?.mime_type === 'application/pdf') FileIcon = FileText
+                      
+                      return (
+                        <Card key={project.id} hover className="overflow-hidden group relative cursor-pointer" onClick={() => handleOpenProject(project)}>
+                          {/* Delete Button */}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeletePortfolio(project.id)
+                            }}
+                            className="absolute top-2 right-2 z-10 bg-background/80 backdrop-blur-sm hover:bg-destructive hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 className="h-4 w-4" size={16} />
+                          </Button>
 
-                        <img 
-                          src={project.image} 
-                          alt={project.title}
-                          className="w-full h-48 object-cover"
-                        />
-                        <CardContent className="p-4">
-                          <h4 className="font-semibold text-lg mb-2">{project.title}</h4>
-                          <p className="text-sm text-muted-foreground mb-3">{project.description}</p>
-                          
-                          {project.files && project.files.length > 0 && (
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-                              <span>{project.files.length} archivo{project.files.length !== 1 ? 's' : ''}</span>
-                              <span className="text-border">•</span>
-                              <span>{project.files.filter(f => f.mime_type?.startsWith('image/')).length} imagen{project.files.filter(f => f.mime_type?.startsWith('image/')).length !== 1 ? 'es' : ''}</span>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
+                          {/* Preview: Image or Icon */}
+                          <div className="w-full h-48 bg-muted/10 relative overflow-hidden">
+                            {hasImage ? (
+                              <img 
+                                src={project.image} 
+                                alt={project.title}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex flex-col items-center justify-center h-full gap-3 bg-gradient-to-br from-muted/20 to-muted/5">
+                                <FileIcon className="h-16 w-16 text-muted-foreground/40" size={64} />
+                                {firstFile?.mime_type && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {firstFile.mime_type.split('/')[1]?.toUpperCase() || 'FILE'}
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          <CardContent className="p-4">
+                            <h4 className="font-semibold text-lg mb-2">{project.title}</h4>
+                            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{project.description}</p>
+                            
+                            {project.files && project.files.length > 0 && (
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                                <span>{project.files.length} archivo{project.files.length !== 1 ? 's' : ''}</span>
+                                {imageCount > 0 && (
+                                  <>
+                                    <span className="text-border">•</span>
+                                    <span>{imageCount} imagen{imageCount !== 1 ? 'es' : ''}</span>
+                                  </>
+                                )}
+                              </div>
+                            )}
+
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="w-full gap-2"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleOpenProject(project)
+                              }}
+                            >
+                              <ExternalLink className="h-4 w-4" size={16} />
+                              Ver Proyecto
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
                   </div>
                 )}
               </CardContent>
