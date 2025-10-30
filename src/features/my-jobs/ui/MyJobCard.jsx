@@ -44,8 +44,6 @@ export function MyJobCard({ job, onViewDetails }) {
     return 'bg-gradient-to-r from-muted to-muted/80'
   }
 
-  console.log(job)
-
   return (
     <Card hover className="group">
       <CardHeader className="pb-3">

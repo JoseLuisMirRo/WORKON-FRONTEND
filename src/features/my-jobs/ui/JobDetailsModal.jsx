@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Modal } from '../../../components/ui/Modal'
 import { Button } from '../../../components/ui/Button'
 import { Badge } from '../../../components/ui/Badge'
@@ -6,11 +6,15 @@ import { Avatar, AvatarImage, AvatarFallback } from '../../../components/ui/Avat
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card'
 import { Wallet, Calendar, Clock, MessageCircle, CheckCircle2, FileText, AlertCircle, User } from '../../../components/ui/Icons'
 import { Separator } from '../../../components/ui/Separator'
+import { supabase } from '../../../lib/supabaseClient'
 
 export function JobDetailsModal({ isOpen, onClose, job }) {
   const [activeTab, setActiveTab] = useState('overview') // overview, deliverables, messages
+  const [milestones, setMilestones] = useState([])
+  const [loadingMilestones, setLoadingMilestones] = useState(false)
+  const [milestonesError, setMilestonesError] = useState('')
 
-  if (!job) return null
+  // Do not return early before hooks; guard later before rendering
 
   const getStatusColor = (status) => {
     const colors = {
@@ -44,13 +48,45 @@ export function JobDetailsModal({ isOpen, onClose, job }) {
     return name.split(' ').map(n => n[0]).join('').toUpperCase()
   }
 
-  // Mock deliverables si no existen
-  const deliverables = job.deliverables || [
-    { id: 1, name: 'Diseño inicial', completed: true, dueDate: '15 Ene' },
-    { id: 2, name: 'Desarrollo backend', completed: true, dueDate: '25 Ene' },
-    { id: 3, name: 'Frontend UI', completed: false, dueDate: '5 Feb' },
-    { id: 4, name: 'Testing y deploy', completed: false, dueDate: '15 Feb' }
-  ]
+  // Fetch milestones when opened
+  useEffect(() => {
+    const fetchMilestones = async () => {
+      if (!isOpen || !job?.proposalId) return
+      try {
+        setLoadingMilestones(true)
+        setMilestonesError('')
+        const { data, error } = await supabase
+          .from('milestones')
+          .select('*')
+          .eq('proposal_id', job.proposalId)
+          .order('sort_order', { ascending: true })
+        if (error) throw error
+        const mapped = (data || []).map((m) => ({
+          id: m.id,
+          name: m.title,
+          description: m.description,
+          completed: m.status === 'completado' || m.status === 'aprobado',
+          dueDate: m.due_date
+            ? new Date(m.due_date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })
+            : 'Sin fecha',
+          amount: m.amount,
+          status: m.status,
+        }))
+        setMilestones(mapped)
+      } catch (e) {
+        console.error('Error fetching milestones:', e)
+        setMilestonesError('No se pudieron cargar los entregables')
+      } finally {
+        setLoadingMilestones(false)
+      }
+    }
+    fetchMilestones()
+  }, [isOpen, job?.proposalId])
+
+  // Prefer fetched milestones; fallback to any provided on job (guard if job is null)
+  const deliverables = (milestones && milestones.length > 0) ? milestones : ((job?.deliverables) || [])
+
+  if (!job) return null
 
   return (
     <Modal
