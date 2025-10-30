@@ -13,6 +13,9 @@ export const MyJobsPage = () => {
     filter,
     changeFilter,
     toggleDeliverable,
+    milestoneFiles,
+    loadMilestoneFiles,
+    onUploadDeliverables,
   } = useMyJobsController()
 
   const [selectedJob, setSelectedJob] = useState(null)
@@ -96,6 +99,9 @@ export const MyJobsPage = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         job={selectedJob}
+        milestoneFiles={milestoneFiles}
+        onLoadMilestoneFiles={loadMilestoneFiles}
+        onUploadDeliverables={onUploadDeliverables}
       />
     </div>
   )

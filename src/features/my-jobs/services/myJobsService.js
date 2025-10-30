@@ -485,3 +485,258 @@ export const fetchJobStats = async (userId = null) => {
 
 export { statusLabels }
 
+// ============================================================================
+// MILESTONES & DELIVERABLES (Real Supabase Data)
+// ============================================================================
+
+const ok = (data) => ({ ok: true, data })
+const fail = (error) => ({ 
+  ok: false, 
+  error: { 
+    code: error?.code || 'UNKNOWN', 
+    message: error?.message || String(error) 
+  } 
+})
+
+const PROPOSAL_COLS = 'id, title, description, total_payment, employer_id, selected_freelancer_id, status, created_at, updated_at, tags'
+const MILESTONE_COLS = 'id, proposal_id, title, description, amount, sort_order, status, due_date, created_at'
+const MF_COLS = 'id, milestone_id, storage_path, mime_type, uploaded_at'
+
+/**
+ * List proposals where current user is the selected freelancer and status is in progress
+ * @returns {Promise<{ok: boolean, data?: Array, error?: Object}>}
+ */
+export async function listMyInProgressProposals() {
+  try {
+    const { data: authData, error: authError } = await supabase.auth.getUser()
+    if (authError || !authData?.user) {
+      return fail(authError || new Error('Not authenticated'))
+    }
+    
+    const uid = authData.user.id
+    const { data, error } = await supabase
+      .from('proposals')
+      .select(PROPOSAL_COLS)
+      .eq('selected_freelancer_id', uid)
+      .in('status', ['en_progreso', 'in_progress', 'asignada', 'assigned'])
+      .order('created_at', { ascending: false })
+    
+    if (error) return fail(error)
+    return ok(data || [])
+  } catch (e) {
+    return fail(e)
+  }
+}
+
+/**
+ * Get a single proposal by ID (with access guard)
+ * @param {number} proposalId - Proposal ID
+ * @returns {Promise<{ok: boolean, data?: Object, error?: Object}>}
+ */
+export async function getProposalById(proposalId) {
+  try {
+    const { data, error } = await supabase
+      .from('proposals')
+      .select(PROPOSAL_COLS)
+      .eq('id', proposalId)
+      .single()
+    
+    if (error) return fail(error)
+    return ok(data)
+  } catch (e) {
+    return fail(e)
+  }
+}
+
+/**
+ * List milestones for a proposal
+ * @param {number} proposalId - Proposal ID
+ * @returns {Promise<{ok: boolean, data?: Array, error?: Object}>}
+ */
+export async function listMilestones(proposalId) {
+  try {
+    const { data, error } = await supabase
+      .from('milestones')
+      .select(MILESTONE_COLS)
+      .eq('proposal_id', proposalId)
+      .order('sort_order', { ascending: true })
+      .order('id', { ascending: true })
+    
+    if (error) return fail(error)
+    return ok(data || [])
+  } catch (e) {
+    return fail(e)
+  }
+}
+
+/**
+ * List files for a milestone
+ * @param {number} milestoneId - Milestone ID
+ * @returns {Promise<{ok: boolean, data?: Array, error?: Object}>}
+ */
+export async function listMilestoneFiles(milestoneId) {
+  try {
+    const { data, error } = await supabase
+      .from('milestone_files')
+      .select(MF_COLS)
+      .eq('milestone_id', milestoneId)
+      .order('uploaded_at', { ascending: false })
+    
+    if (error) return fail(error)
+    return ok(data || [])
+  } catch (e) {
+    return fail(e)
+  }
+}
+
+/**
+ * Upload files to a milestone (atomic via RPC)
+ * @param {number} milestoneId - Milestone ID
+ * @param {File[]} files - Files to upload
+ * @returns {Promise<{ok: boolean, data?: Array, error?: Object}>}
+ */
+export async function uploadMilestoneFiles(milestoneId, files) {
+  try {
+    // Get proposal_id from milestone
+    const { data: milestoneRow, error: milestoneError } = await supabase
+      .from('milestones')
+      .select('proposal_id')
+      .eq('id', milestoneId)
+      .single()
+    
+    if (milestoneError) return fail(milestoneError)
+    
+    const proposalId = milestoneRow.proposal_id
+    const bucket = 'deliverables'
+    const inserted = []
+
+    for (const file of files) {
+      // 1) Generate unique storage path
+      const uuid = crypto.randomUUID()
+      const sanitizedName = file.name.replace(/[^\w.\-]+/g, '_')
+      const storagePath = `deliverables/${proposalId}/${milestoneId}/${uuid}-${sanitizedName}`
+      
+      // 2) Upload to Storage
+      const { error: uploadError } = await supabase
+        .storage
+        .from(bucket)
+        .upload(storagePath, file, { 
+          upsert: true,
+          contentType: file.type 
+        })
+      
+      if (uploadError) return fail(uploadError)
+      
+      // 3) Atomic DB insert + milestone status update via RPC
+      const { data: rpcData, error: rpcError } = await supabase.rpc('submit_milestone_deliverable', {
+        p_milestone_id: milestoneId,
+        p_storage_path: storagePath,
+        p_mime_type: file.type || null
+      })
+      
+      if (rpcError) return fail(rpcError)
+      
+      // RPC returns array with single row, normalize file_id -> id
+      const rawRow = Array.isArray(rpcData) ? rpcData[0] : rpcData
+      const fileRow = rawRow ? { ...rawRow, id: rawRow.file_id || rawRow.id } : rawRow
+      inserted.push(fileRow)
+    }
+    
+    return ok(inserted)
+  } catch (e) {
+    return fail(e)
+  }
+}
+
+/**
+ * Upload a single deliverable file (atomic via RPC)
+ * @param {number} milestoneId - Milestone ID
+ * @param {number} proposalId - Proposal ID
+ * @param {File} file - File to upload
+ * @returns {Promise<{ok: boolean, data?: Object, error?: Object}>}
+ */
+export async function uploadDeliverable(milestoneId, proposalId, file) {
+  try {
+    if (!milestoneId || !proposalId || !file) {
+      return fail('milestoneId, proposalId and file are required')
+    }
+
+    // 1) Build deterministic storage key
+    const uuid = crypto.randomUUID()
+    const sanitizedName = file.name.replace(/[^\w.\-]+/g, '_')
+    const key = `deliverables/${proposalId}/${milestoneId}/${uuid}-${sanitizedName}`
+
+    // 2) Upload to Storage
+    const { error: uploadError } = await supabase
+      .storage
+      .from('deliverables')
+      .upload(key, file, { 
+        upsert: true, 
+        contentType: file.type 
+      })
+
+    if (uploadError) return fail(uploadError)
+
+    // 3) Atomic DB insert + milestone status update via RPC
+    const { data: rpcData, error: rpcError } = await supabase.rpc('submit_milestone_deliverable', {
+      p_milestone_id: milestoneId,
+      p_storage_path: key,
+      p_mime_type: file.type || null
+    })
+
+    if (rpcError) return fail(rpcError)
+
+    // Return inserted file row, normalize file_id -> id
+    const rawRow = Array.isArray(rpcData) ? rpcData[0] : rpcData
+    const fileRow = rawRow ? { ...rawRow, id: rawRow.file_id || rawRow.id } : rawRow
+    return ok({ 
+      fileRow, 
+      storagePath: key 
+    })
+  } catch (e) {
+    return fail(e)
+  }
+}
+
+/**
+ * Update milestone status
+ * @param {number} milestoneId - Milestone ID
+ * @param {string} status - New status
+ * @returns {Promise<{ok: boolean, data?: Object, error?: Object}>}
+ */
+export async function setMilestoneStatus(milestoneId, status) {
+  try {
+    const { data, error } = await supabase
+      .from('milestones')
+      .update({ status })
+      .eq('id', milestoneId)
+      .select(MILESTONE_COLS)
+      .single()
+    
+    if (error) return fail(error)
+    return ok(data)
+  } catch (e) {
+    return fail(e)
+  }
+}
+
+/**
+ * Get signed URL for a deliverable file
+ * @param {string} storagePath - Storage path
+ * @param {number} expiresIn - Expiration in seconds (default 1 hour)
+ * @returns {Promise<{ok: boolean, data?: string, error?: Object}>}
+ */
+export async function getSignedUrlForDeliverable(storagePath, expiresIn = 3600) {
+  try {
+    const { data, error } = await supabase
+      .storage
+      .from('deliverables')
+      .createSignedUrl(storagePath, expiresIn)
+    
+    if (error) return fail(error)
+    return ok(data?.signedUrl || null)
+  } catch (e) {
+    return fail(e)
+  }
+}
+

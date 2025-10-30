@@ -8,11 +8,12 @@ import { Wallet, Calendar, Clock, MessageCircle, CheckCircle2, FileText, AlertCi
 import { Separator } from '../../../components/ui/Separator'
 import { supabase } from '../../../lib/supabaseClient'
 
-export function JobDetailsModal({ isOpen, onClose, job }) {
+export function JobDetailsModal({ isOpen, onClose, job, milestoneFiles = {}, onLoadMilestoneFiles, onUploadDeliverables }) {
   const [activeTab, setActiveTab] = useState('overview') // overview, deliverables, messages
   const [milestones, setMilestones] = useState([])
   const [loadingMilestones, setLoadingMilestones] = useState(false)
   const [milestonesError, setMilestonesError] = useState('')
+  const [uploadingMilestoneId, setUploadingMilestoneId] = useState(null)
 
   // Do not return early before hooks; guard later before rendering
 
@@ -73,6 +74,10 @@ export function JobDetailsModal({ isOpen, onClose, job }) {
           status: m.status,
         }))
         setMilestones(mapped)
+        // Load files for each milestone
+        if (onLoadMilestoneFiles) {
+          mapped.forEach((m) => onLoadMilestoneFiles(m.id))
+        }
       } catch (e) {
         console.error('Error fetching milestones:', e)
         setMilestonesError('No se pudieron cargar los entregables')
@@ -81,10 +86,79 @@ export function JobDetailsModal({ isOpen, onClose, job }) {
       }
     }
     fetchMilestones()
-  }, [isOpen, job?.proposalId])
+  }, [isOpen, job?.proposalId, onLoadMilestoneFiles])
 
   // Prefer fetched milestones; fallback to any provided on job (guard if job is null)
   const deliverables = (milestones && milestones.length > 0) ? milestones : ((job?.deliverables) || [])
+
+  const refetchMilestones = async () => {
+    if (!job?.proposalId) return
+    try {
+      const { data, error } = await supabase
+        .from('milestones')
+        .select('*')
+        .eq('proposal_id', job.proposalId)
+        .order('sort_order', { ascending: true })
+      
+      if (error) throw error
+      
+      const mapped = (data || []).map((m) => ({
+        id: m.id,
+        name: m.title,
+        description: m.description,
+        completed: m.status === 'completado' || m.status === 'aprobado',
+        dueDate: m.due_date
+          ? new Date(m.due_date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })
+          : 'Sin fecha',
+        amount: m.amount,
+        status: m.status,
+      }))
+      setMilestones(mapped)
+    } catch (e) {
+      console.error('Error refetching milestones:', e)
+    }
+  }
+
+  const handleFileUpload = async (milestoneId, event) => {
+    const files = Array.from(event.target.files || [])
+    if (files.length === 0) return
+
+    setUploadingMilestoneId(milestoneId)
+    try {
+      if (onUploadDeliverables) {
+        const result = await onUploadDeliverables(milestoneId, files)
+        if (result?.ok) {
+          // Success - refresh milestone status (RPC sets status to 'en_revision')
+          await refetchMilestones()
+          console.log('Files uploaded successfully, milestone marked as "en_revision"')
+        } else {
+          console.error('Upload failed:', result?.error)
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading files:', error)
+    } finally {
+      setUploadingMilestoneId(null)
+      // Reset input
+      event.target.value = ''
+    }
+  }
+
+  const handleDownloadFile = async (storagePath, fileName) => {
+    try {
+      const { data, error } = await supabase
+        .storage
+        .from('deliverables')
+        .createSignedUrl(storagePath, 3600) // 1 hour expiry
+      
+      if (error) throw error
+      
+      // Open in new tab
+      window.open(data.signedUrl, '_blank')
+    } catch (error) {
+      console.error('Error downloading file:', error)
+    }
+  }
 
   if (!job) return null
 
@@ -276,41 +350,80 @@ export function JobDetailsModal({ isOpen, onClose, job }) {
               </CardContent>
             </Card>
 
-            {deliverables.map((deliverable, index) => (
-              <Card key={deliverable.id} hover className="group">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
-                      deliverable.completed 
-                        ? 'bg-accent/20 text-accent' 
-                        : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {deliverable.completed ? (
-                        <CheckCircle2 className="h-5 w-5" size={20} />
-                      ) : (
-                        <span className="font-bold">{index + 1}</span>
+{deliverables.map((deliverable, index) => {
+              const files = milestoneFiles[deliverable.id] || []
+              const isUploading = uploadingMilestoneId === deliverable.id
+              
+              return (
+                <Card key={deliverable.id} hover className="group">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
+                      <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${
+                        deliverable.completed 
+                          ? 'bg-accent/20 text-accent' 
+                          : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {deliverable.completed ? (
+                          <CheckCircle2 className="h-5 w-5" size={20} />
+                        ) : (
+                          <span className="font-bold">{index + 1}</span>
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <h4 className={`font-medium ${deliverable.completed ? 'line-through text-muted-foreground' : ''}`}>
+                          {deliverable.name}
+                        </h4>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Fecha límite: {deliverable.dueDate}
+                          {deliverable.amount && ` · $${deliverable.amount.toLocaleString()}`}
+                        </p>
+
+                        {/* File list */}
+                        {files.length > 0 && (
+                          <div className="mt-3 space-y-1">
+                            {files.map((file) => {
+                              const fileName = file.storage_path.split('/').pop()
+                              return (
+                                <button
+                                  key={file.id}
+                                  onClick={() => handleDownloadFile(file.storage_path, fileName)}
+                                  className="flex items-center gap-2 text-xs text-primary hover:underline"
+                                >
+                                  <FileText className="h-3 w-3" size={12} />
+                                  {fileName}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {!deliverable.completed && (
+                        <div className="relative shrink-0">
+                          <input
+                            type="file"
+                            multiple
+                            onChange={(e) => handleFileUpload(deliverable.id, e)}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            disabled={isUploading}
+                          />
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="gap-2"
+                            disabled={isUploading}
+                          >
+                            <FileText className="h-4 w-4" size={16} />
+                            {isUploading ? 'Subiendo...' : 'Subir'}
+                          </Button>
+                        </div>
                       )}
                     </div>
-                    
-                    <div className="flex-1">
-                      <h4 className={`font-medium ${deliverable.completed ? 'line-through text-muted-foreground' : ''}`}>
-                        {deliverable.name}
-                      </h4>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Fecha límite: {deliverable.dueDate}
-                      </p>
-                    </div>
-
-                    {!deliverable.completed && (
-                      <Button size="sm" variant="outline" className="gap-2">
-                        <FileText className="h-4 w-4" size={16} />
-                        Subir
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         )}
 
