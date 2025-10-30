@@ -3,7 +3,7 @@ import { Badge } from '../../../components/ui/Badge'
 import { Button } from '../../../components/ui/Button'
 import { Users, Calendar, Wallet, Eye, MoreVertical } from '../../../components/ui/Icons'
 
-export function EmployerJobCard({ job, onUpdate, onDelete }) {
+export function EmployerJobCard({ job, onUpdate, onDelete, onDetails }) {
   const getStatusColor = (status) => {
     const colors = {
       activo: 'success',
@@ -133,6 +133,11 @@ export function EmployerJobCard({ job, onUpdate, onDelete }) {
           </span>
 
           <div className="flex items-center gap-2">
+            {onDetails && (
+              <Button size="sm" variant="default" onClick={() => onDetails(job)}>
+                Ver detalles
+              </Button>
+            )}
             {job.applicants > 0 && (
               <Button size="sm" variant="accent" className="gap-2">
                 <Users className="h-4 w-4" size={16} />
