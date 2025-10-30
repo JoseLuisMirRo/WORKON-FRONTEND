@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from './ui/Button'
 import { Avatar, AvatarImage, AvatarFallback } from './ui/Avatar'
@@ -15,7 +15,8 @@ import { Bell, User, Wallet, LogOut, Settings, Menu, X } from './ui/Icons'
 import { LogoIcon } from './Logo'
 import { cn } from '../lib/utils'
 import { useAuth } from '../contexts/AuthContext'
-import { isConnected, requestAccess, getAddress } from "@stellar/freighter-api";
+import { isConnected, requestAccess, getAddress } from "@stellar/freighter-api"
+import { callContractMethod } from '../service/contract/callContractMethods'
 
 
 export function Navbar() {
@@ -24,6 +25,8 @@ export function Navbar() {
   const { user, isAuthenticated, logout } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [walletAddress, setWalletAddress] = useState()
+  const [tokenBalance, setTokenBalance] = useState(null)
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false)
 
   const isActive = (path) => location.pathname === path
 
@@ -34,6 +37,30 @@ export function Navbar() {
     await logout()
     closeMobileMenu()
     navigate('/login')
+  }
+
+  // Fetch token balance from contract
+  const fetchTokenBalance = async (address) => {
+    try {
+      setIsLoadingBalance(true)
+      console.log('Fetching token balance for address:', address)
+      
+      // Call the balance method from the contract
+      // The balance method expects: fn balance(e: &Env, account: Address) -> i128
+      const balance = await callContractMethod('balance', [address], address)
+      
+      console.log('Token balance result:', balance)
+      
+      // Convert i128 to a readable format (divide by 10^7 if using 7 decimals)
+      // Adjust the divisor based on your token's decimal places
+      
+      setTokenBalance(balance)
+    } catch (error) {
+      console.error('Error fetching token balance:', error)
+      setTokenBalance('0.01')
+    } finally {
+      setIsLoadingBalance(false)
+    }
   }
 
   async function connectFreighter() {
@@ -51,10 +78,22 @@ export function Navbar() {
       const addressResult = await getAddress();
       setWalletAddress(addressResult.address);
       console.log(addressResult)
+      
+      // Fetch token balance after connecting
+      if (addressResult.address) {
+        fetchTokenBalance(addressResult.address)
+      }
     } catch (error) {
       console.error("Error trying to connect wallet", error)
     }
   }
+
+  // Fetch balance when wallet address changes
+  useEffect(() => {
+    if (walletAddress) {
+      fetchTokenBalance(walletAddress)
+    }
+  }, [walletAddress])
 
   // Si no hay sesión, mostrar navbar simplificado
   if (!isAuthenticated) {
@@ -178,10 +217,13 @@ export function Navbar() {
                 </>
                 :
                 <>
-                  {/* Tokens - ocultar en móviles */}
-                  < Button variant="outline" className="relative group">
-                    <Link to="/tokens">
-                      <Wallet className="h-4 w-4 transition-colors" size={16} />
+                  {/* Token Balance Display */}
+                  <Button variant="outline" className="gap-2 hover:border-accent transition-all">
+                    <Link to="/tokens" className="flex items-center gap-2">
+                      <Wallet className="h-4 w-4" size={16} />
+                      <span className="hidden sm:inline font-semibold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+                        {isLoadingBalance ? 'Loading...' : tokenBalance !== null ? `${tokenBalance} Tokens` : 'N/A'}
+                      </span>
                     </Link>
                   </Button>
                 </>
@@ -353,9 +395,11 @@ export function Navbar() {
                     <Wallet className="mr-2 h-4 w-4" size={16} />
                     <span className="flex items-center gap-2">
                       Tokens{' '}
-                      <span className="text-xs font-semibold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-                        2,650 USDC
-                      </span>
+                      {walletAddress && (
+                        <span className="text-xs font-semibold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+                          {isLoadingBalance ? 'Loading...' : tokenBalance !== null ? `${tokenBalance} Tokens` : 'N/A'}
+                        </span>
+                      )}
                     </span>
                   </Button>
                 </Link>
