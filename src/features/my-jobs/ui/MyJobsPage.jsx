@@ -25,9 +25,10 @@ export const MyJobsPage = () => {
 
   const filters = [
     { value: 'all', label: 'Todos' },
-    { value: 'en-progreso', label: 'En Progreso' },
-    { value: 'revision', label: 'En Revisión' },
-    { value: 'completado', label: 'Completados' },
+    { value: 'pendiente', label: 'Pendiente' },
+    { value: 'en_revision', label: 'En Revisión' },
+    { value: 'liberado', label: 'Liberados' },
+    { value: 'rechazado', label: 'Rechazados' },
   ]
 
   if (loading) {
@@ -37,6 +38,9 @@ export const MyJobsPage = () => {
       </div>
     )
   }
+
+  console.log(jobs);
+  
 
   return (
     <div className="bg-background">

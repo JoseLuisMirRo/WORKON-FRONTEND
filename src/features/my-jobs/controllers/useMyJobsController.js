@@ -10,17 +10,29 @@ export const useMyJobsController = () => {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
+  const [userId, setUserId] = useState(null)
 
+  // Get user ID from localStorage on mount
   useEffect(() => {
-    loadData()
-  }, [filter])
+    const storedUserId = localStorage.getItem('userId')
+    if (storedUserId) {
+      setUserId(storedUserId)
+    }
+  }, [])
+
+  // Load data when filter or userId changes
+  useEffect(() => {
+    if (userId) {
+      loadData()
+    }
+  }, [filter, userId])
 
   const loadData = async () => {
     try {
       setLoading(true)
       const [jobsData, statsData] = await Promise.all([
-        myJobsService.fetchMyJobs(filter),
-        myJobsService.fetchJobStats(),
+        myJobsService.fetchMyJobs(filter, userId),
+        myJobsService.fetchJobStats(userId),
       ])
       setJobs(jobsData)
       setStats(statsData)

@@ -7,6 +7,11 @@ import { Calendar, Wallet, MessageCircle, Clock } from '../../../components/ui/I
 export function MyJobCard({ job, onViewDetails }) {
   const getStatusColor = (status) => {
     const colors = {
+      'pendiente': 'default',
+      'en_revision': 'warning',
+      'liberado': 'success',
+      'rechazado': 'destructive',
+      // Legacy statuses for backward compatibility
       'en-progreso': 'default',
       'completado': 'success',
       'revision': 'warning',
@@ -17,6 +22,11 @@ export function MyJobCard({ job, onViewDetails }) {
 
   const getStatusLabel = (status) => {
     const labels = {
+      'pendiente': '🚀 Pendiente',
+      'en_revision': '👀 En Revisión',
+      'liberado': '✅ Liberado',
+      'rechazado': '❌ Rechazado',
+      // Legacy statuses for backward compatibility
       'en-progreso': '🚀 En Progreso',
       'completado': '✅ Completado',
       'revision': '👀 En Revisión',
@@ -31,6 +41,8 @@ export function MyJobCard({ job, onViewDetails }) {
     if (progress >= 25) return 'bg-gradient-to-r from-warning to-warning/80'
     return 'bg-gradient-to-r from-muted to-muted/80'
   }
+
+  console.log(job)
 
   return (
     <Card hover className="group">
@@ -66,7 +78,7 @@ export function MyJobCard({ job, onViewDetails }) {
         </div>
 
         {/* Progreso */}
-        {job.status === 'en-progreso' && (
+        {(job.status === 'pendiente' || job.status === 'en_revision' || job.status === 'en-progreso') && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Progreso</span>
@@ -93,7 +105,7 @@ export function MyJobCard({ job, onViewDetails }) {
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Clock className="h-3.5 w-3.5" size={14} />
-              <span>{job.status === 'completado' ? 'Finalizado' : 'Entrega'}</span>
+              <span>{(job.status === 'liberado' || job.status === 'completado') ? 'Finalizado' : 'Entrega'}</span>
             </div>
             <p className="text-sm font-medium">{job.deadline}</p>
           </div>
