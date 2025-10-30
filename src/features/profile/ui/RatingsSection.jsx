@@ -141,23 +141,23 @@ export const RatingsSection = ({ profile }) => {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Rating Overview */}
+        {/* Rating Overview - From Real DB */}
         <div className="text-center p-6 rounded-xl bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/20">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Star className="h-8 w-8 text-yellow-400 fill-yellow-400" size={32} />
-            <span className="text-4xl font-bold">{profile.stats.rating}</span>
+            <span className="text-4xl font-bold">{profile.rating?.toFixed(1) || '0.0'}</span>
           </div>
           <div className="flex justify-center mb-2">
             {[...Array(5)].map((_, i) => (
               <Star 
                 key={i} 
-                className={`h-5 w-5 ${i < Math.floor(profile.stats.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-muted'}`}
+                className={`h-5 w-5 ${i < Math.floor(profile.rating || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-muted'}`}
                 size={20}
               />
             ))}
           </div>
           <p className="text-sm text-muted-foreground">
-            Basado en {profile.stats.reviews} reseñas verificadas
+            {reviews.length > 0 ? `Basado en ${reviews.length} reseñas` : 'Sin reseñas aún'}
           </p>
         </div>
 
@@ -266,14 +266,16 @@ export const RatingsSection = ({ profile }) => {
           )}
         </div>
 
-        {/* Stats Summary */}
+        {/* Stats Summary - From Real DB */}
         <div className="grid grid-cols-2 gap-3 pt-4 border-t">
           <div className="text-center p-3 rounded-xl bg-muted/30">
-            <p className="text-2xl font-bold text-green-400">{profile.stats.successRate}%</p>
-            <p className="text-xs text-muted-foreground">Tasa de Éxito</p>
+            <p className="text-2xl font-bold text-green-400">
+              {profile.rating ? `${(profile.rating * 20).toFixed(0)}%` : '0%'}
+            </p>
+            <p className="text-xs text-muted-foreground">Score</p>
           </div>
           <div className="text-center p-3 rounded-xl bg-muted/30">
-            <p className="text-2xl font-bold text-primary">{profile.stats.jobsCompleted}</p>
+            <p className="text-2xl font-bold text-primary">{profile.work_history?.length || 0}</p>
             <p className="text-xs text-muted-foreground">Proyectos Completados</p>
           </div>
         </div>

@@ -13,7 +13,8 @@ import {
   
   const RPC_URL = 'https://soroban-testnet.stellar.org';
   const NETWORK_PASSPHRASE = Networks.TESTNET;
-  const CONTRACT_ID = 'CAOWRWB4T3RP7N2TFLBLAMIG2IREJHP62T5LK7YXBNP3AXXYAPSB7KHF';
+  const CONTRACT_ID = 'CDGFFSBQSMKJHYO4VG6T4XP5PDLROB2QA5XQ4EOCSE6HDCT57RAC627B';
+  // CAOWRWB4T3RP7N2TFLBLAMIG2IREJHP62T5LK7YXBNP3AXXYAPSB7KHF
   
   // Initialize RPC client
   const server = new rpc.Server(RPC_URL);
@@ -47,10 +48,22 @@ import {
         return xdr.ScVal.scvString(arg);
       }
       
-      // For numbers
-      if (typeof arg === 'number') {
+      // For numbers - handle large numbers for i128
+    if (typeof arg === 'number') {
+        // If the number is large (> 2^32), treat it as i128
+        if (arg > 4294967295 || arg < 0) {
+            return nativeToScVal(arg, { type: 'i128' });
+        }
+        // Otherwise, use u32 for smaller positive numbers
         return nativeToScVal(arg, { type: 'u32' });
-      }
+    }
+
+    // --- AÑADE ESTE BLOQUE ---
+    // For BigInt - always treat as i128
+    if (typeof arg === 'bigint') {
+        return nativeToScVal(arg, { type: 'i128' });
+    }
+    // --- FIN DEL BLOQUE AÑADIDO ---
       
       // For booleans
       if (typeof arg === 'boolean') {

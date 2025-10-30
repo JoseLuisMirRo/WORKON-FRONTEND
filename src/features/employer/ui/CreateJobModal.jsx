@@ -4,6 +4,9 @@ import { Button } from '../../../components/ui/Button'
 import { Badge } from '../../../components/ui/Badge'
 import { Card, CardContent } from '../../../components/ui/Card'
 import { CheckCircle2, AlertCircle, Wallet, Calendar, Plus, X, FileText } from '../../../components/ui/Icons'
+import { invokeContractMethod, callContractMethod } from '../../../service/contract/callContractMethods'
+import { createProposal, createMilestones } from '../services/employerService'
+import { getAddress } from '@stellar/freighter-api'
 
 export function CreateJobModal({ isOpen, onClose, onConfirm }) {
   const [formData, setFormData] = useState({
@@ -23,6 +26,9 @@ export function CreateJobModal({ isOpen, onClose, onConfirm }) {
     description: '',
     deadline: ''
   })
+  const [isLockingTokens, setIsLockingTokens] = useState(false)
+  const [lockError, setLockError] = useState(null)
+  const [lockSuccess, setLockSuccess] = useState(false)
 
   const categories = ['Desarrollo', 'Diseño', 'Marketing', 'Contenido', 'Otro']
   const urgencyLevels = [
@@ -31,26 +37,177 @@ export function CreateJobModal({ isOpen, onClose, onConfirm }) {
     { value: 'alta', label: 'Alta', icon: '🔥', color: 'destructive' }
   ]
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.title || !formData.description || !formData.deadline) {
       alert('Por favor completa todos los campos requeridos')
       return
     }
 
-    onConfirm(formData)
-    
-    // Reset form
-    setFormData({
-      title: '',
-      description: '',
-      category: 'Desarrollo',
-      budget: 1000,
-      urgency: 'media',
-      deadline: '',
-      skills: [],
-      deliverables: []
-    })
-    setCurrentDeliverable({ title: '', description: '', deadline: '' })
+    try {
+      setIsLockingTokens(true)
+      setLockError(null)
+      setLockSuccess(false)
+
+      // Get the employer's wallet address
+      const addressResult = await getAddress()
+      const employerAddress = addressResult.address
+
+      if (!employerAddress) {
+        throw new Error('No se pudo obtener la dirección de la billetera. Por favor, conecta tu wallet.')
+      }
+
+      console.log('=== Starting Token Lock Process ===')
+      console.log('Employer address:', employerAddress)
+      console.log('Budget amount (raw):', formData.budget)
+
+      // Check user's balance first
+      console.log('Checking token balance...')
+      const balance = await callContractMethod('balance', [employerAddress], employerAddress)
+      console.log('Current balance (raw):', balance)
+      console.log('Current balance (type):', typeof balance)
+      console.log('Current balance (BigInt):', BigInt(balance).toString())
+
+      // Convert budget to i128 format
+      // The amount should be in stroops (multiply by 10^7 for 7 decimals)
+      const amountToLock = BigInt(formData.budget) * BigInt(10000000)
+      console.log('Amount to lock (stroops):', amountToLock.toString())
+      console.log('Amount to lock (Number):', Number(amountToLock))
+
+      // Check if user has enough balance
+      const balanceBigInt = BigInt(balance)
+      console.log('Balance comparison:', {
+        balance: balanceBigInt.toString(),
+        amountToLock: amountToLock.toString(),
+        hasSufficient: balanceBigInt >= amountToLock
+      })
+
+      if (balance && balanceBigInt < amountToLock) {
+        throw new Error(`Saldo insuficiente. Tienes ${Number(balance) / 10000000} tokens, pero necesitas ${formData.budget} tokens.`)
+      }
+
+      console.log('Balance check passed.')
+      
+      // Check if contract is paused (your contract has a Pausable trait)
+      console.log('Checking if contract is paused...')
+      try {
+        const isPaused = await callContractMethod('paused', [], employerAddress)
+        console.log('Contract paused status:', isPaused)
+        
+        if (isPaused === true) {
+          throw new Error('⚠️ El contrato está pausado. No se pueden bloquear tokens en este momento. Contacta al administrador del contrato.')
+        }
+      } catch (pauseError) {
+        console.warn('Could not check pause status:', pauseError)
+        // Continue anyway - the pause check might not be critical
+      }
+      
+      console.log('Attempting to lock tokens...')
+      console.log('Parameters:', {
+        from: employerAddress,
+        amount: Number(amountToLock),
+        amountType: typeof amountToLock
+      })
+
+      // Call the lock function on the contract
+      // pub fn lock(e: &Env, from: Address, amount: i128)
+      const lockResult = await invokeContractMethod(
+        'lock',
+        [employerAddress, amountToLock],
+        employerAddress
+      )
+
+      console.log('Lock transaction result:', lockResult)
+
+      if (lockResult.status === 'SUCCESS') {
+        setLockSuccess(true)
+        
+        // Add transaction hash to job data
+        const jobDataWithTx = {
+          ...formData,
+          lockTransactionHash: lockResult.hash,
+          lockedAmount: formData.budget,
+          employerAddress: employerAddress
+        }
+
+        console.log('Job data with transaction:', jobDataWithTx)
+
+        // Insert proposal in Supabase
+        try {
+          const employerId = localStorage.getItem('userId')
+          if (!employerId) {
+            console.warn('No employer_id (userId) in localStorage; skipping DB insert')
+          } else {
+            const inserted = await createProposal({
+              title: formData.title,
+              description: formData.description,
+              total_payment: Number(formData.budget),
+              employer_id: employerId,
+              tags: formData.skills || [],
+              status: 'publicada',
+            })
+            console.log('Proposal inserted:', inserted)
+
+            // Insert milestones for this proposal (deliverables)
+            if (Array.isArray(formData.deliverables) && formData.deliverables.length > 0) {
+              const milestones = await createMilestones(inserted.id, formData.deliverables, Number(formData.budget))
+              console.log('Milestones inserted:', milestones?.length)
+            }
+          }
+        } catch (dbErr) {
+          console.error('Error inserting proposal to Supabase:', dbErr)
+        }
+
+        // Notify parent
+        onConfirm(jobDataWithTx)
+        
+        // Reset form
+        setFormData({
+          title: '',
+          description: '',
+          category: 'Desarrollo',
+          budget: 1000,
+          urgency: 'media',
+          deadline: '',
+          skills: [],
+          deliverables: []
+        })
+        setCurrentDeliverable({ title: '', description: '', deadline: '' })
+        setLockError(null)
+        setLockSuccess(false)
+      } else {
+        throw new Error('La transacción de bloqueo de tokens falló')
+      }
+    } catch (error) {
+      console.error('=== Error locking tokens ===')
+      console.error('Error:', error)
+      console.error('Error message:', error.message)
+      
+      // Provide more specific error messages
+      let errorMessage = error.message || 'Error al bloquear los tokens. Por favor, intenta nuevamente.'
+      
+      if (error.message?.includes('Simulation failed')) {
+        errorMessage = 'Error en la simulación del contrato. Verifica que tengas suficiente balance y que el contrato esté correctamente configurado.'
+      } else if (error.message?.includes('UnreachableCodeReached')) {
+        errorMessage = `⚠️ Error en el contrato: El contrato no puede transferir tokens desde tu cuenta.
+
+Posibles causas:
+1. El contrato necesita usar 'transfer_from' en lugar de 'transfer'
+2. El token contract no está correctamente inicializado
+3. El contrato necesita autorización adicional para mover tus tokens
+
+💡 Solución: Revisa la implementación de la función 'lock' en tu contrato Rust. 
+La función Base::transfer(e, &from, &contract_addr, amount) probablemente necesita ser reemplazada por una llamada que el usuario autorice directamente.
+
+Balance actual: ${balance ? (Number(balance) / 10000000).toFixed(2) : 'N/A'} tokens
+Intentando bloquear: ${formData.budget} tokens`
+      } else if (error.message?.includes('User declined')) {
+        errorMessage = 'Transacción cancelada por el usuario.'
+      }
+      
+      setLockError(errorMessage)
+    } finally {
+      setIsLockingTokens(false)
+    }
   }
 
   const handleAddSkill = () => {
@@ -106,16 +263,25 @@ export function CreateJobModal({ isOpen, onClose, onConfirm }) {
       description="Crea una oferta de trabajo para encontrar al freelancer perfecto"
       footer={
         <>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={isLockingTokens}>
             Cancelar
           </Button>
           <Button 
             onClick={handleSubmit}
             className="gap-2"
-            disabled={!formData.title || !formData.description || !formData.deadline}
+            disabled={!formData.title || !formData.description || !formData.deadline || isLockingTokens}
           >
-            <CheckCircle2 className="h-4 w-4" size={16} />
-            Publicar Trabajo
+            {isLockingTokens ? (
+              <>
+                {/* <Loader2 className="h-4 w-4 animate-spin" size={16} /> */}
+                Bloqueando Tokens...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="h-4 w-4" size={16} />
+                Publicar Trabajo
+              </>
+            )}
           </Button>
         </>
       }
@@ -133,6 +299,49 @@ export function CreateJobModal({ isOpen, onClose, onConfirm }) {
             </div>
           </CardContent>
         </Card>
+
+        {/* Token Lock Info */}
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="p-4 flex items-start gap-3">
+            <Wallet className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" size={20} />
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Bloqueo de Tokens en Escrow</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Al publicar este trabajo, se bloquearán <span className="font-semibold text-primary">{formData.budget} tokens</span> en el contrato inteligente como garantía. Los tokens se liberarán al freelancer cuando complete el trabajo satisfactoriamente.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Error message */}
+        {lockError && (
+          <Card className="border-destructive/30 bg-destructive/5">
+            <CardContent className="p-4 flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" size={20} />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-destructive">Error al bloquear tokens</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {lockError}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Success message */}
+        {lockSuccess && (
+          <Card className="border-accent/30 bg-accent/5">
+            <CardContent className="p-4 flex items-start gap-3">
+              <CheckCircle2 className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" size={20} />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-accent">¡Tokens bloqueados exitosamente!</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Los tokens han sido transferidos al contrato de escrow.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Título del trabajo */}
         <div className="space-y-2">

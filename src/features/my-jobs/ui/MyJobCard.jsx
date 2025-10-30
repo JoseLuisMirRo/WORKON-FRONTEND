@@ -3,10 +3,19 @@ import { Badge } from '../../../components/ui/Badge'
 import { Button } from '../../../components/ui/Button'
 import { Avatar, AvatarImage, AvatarFallback } from '../../../components/ui/Avatar'
 import { Calendar, Wallet, MessageCircle, Clock } from '../../../components/ui/Icons'
+import { useStartChat } from '../../messages'
 
 export function MyJobCard({ job, onViewDetails }) {
+  const { startChat } = useStartChat()
   const getStatusColor = (status) => {
     const colors = {
+      'pendiente': 'secondary',
+      'en_revision': 'warning',
+      'liberado': 'success',
+      'rechazado': 'destructive',
+      'seleccionado': 'accent',
+      'postulado': 'primary',
+      // Legacy statuses for backward compatibility
       'en-progreso': 'default',
       'completado': 'success',
       'revision': 'warning',
@@ -17,6 +26,11 @@ export function MyJobCard({ job, onViewDetails }) {
 
   const getStatusLabel = (status) => {
     const labels = {
+      'pendiente': '🚀 Pendiente',
+      'en_revision': '👀 En Revisión',
+      'liberado': '✅ Liberado',
+      'rechazado': '❌ Rechazado',
+      // Legacy statuses for backward compatibility
       'en-progreso': '🚀 En Progreso',
       'completado': '✅ Completado',
       'revision': '👀 En Revisión',
@@ -66,7 +80,7 @@ export function MyJobCard({ job, onViewDetails }) {
         </div>
 
         {/* Progreso */}
-        {job.status === 'en-progreso' && (
+        {(job.status === 'pendiente' || job.status === 'en_revision' || job.status === 'en-progreso') && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Progreso</span>
@@ -93,7 +107,7 @@ export function MyJobCard({ job, onViewDetails }) {
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Clock className="h-3.5 w-3.5" size={14} />
-              <span>{job.status === 'completado' ? 'Finalizado' : 'Entrega'}</span>
+              <span>{(job.status === 'liberado' || job.status === 'completado') ? 'Finalizado' : 'Entrega'}</span>
             </div>
             <p className="text-sm font-medium">{job.deadline}</p>
           </div>
@@ -113,6 +127,16 @@ export function MyJobCard({ job, onViewDetails }) {
               variant="outline" 
               size="sm"
               className="border-accent/50 hover:border-accent hover:text-accent"
+              onClick={() => {
+                console.log('🔵 Botón chat clickeado. Job:', job)
+                console.log('🔵 employerId:', job.employerId, 'proposalId:', job.proposalId)
+                if (job.employerId) {
+                  startChat(job.employerId, job.proposalId)
+                } else {
+                  alert('Este trabajo no tiene un employerId válido')
+                }
+              }}
+              title="Enviar mensaje al cliente"
             >
               <MessageCircle className="h-4 w-4" size={16} />
             </Button>

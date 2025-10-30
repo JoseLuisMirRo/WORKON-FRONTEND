@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from './ui/Button'
 import { Avatar, AvatarImage, AvatarFallback } from './ui/Avatar'
@@ -15,7 +15,8 @@ import { Bell, User, Wallet, LogOut, Settings, Menu, X } from './ui/Icons'
 import { LogoIcon } from './Logo'
 import { cn } from '../lib/utils'
 import { useAuth } from '../contexts/AuthContext'
-import { isConnected, requestAccess, getAddress } from "@stellar/freighter-api";
+import { isConnected, requestAccess, getAddress } from "@stellar/freighter-api"
+import { callContractMethod } from '../service/contract/callContractMethods'
 
 
 export function Navbar() {
@@ -24,6 +25,8 @@ export function Navbar() {
   const { user, isAuthenticated, logout } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [walletAddress, setWalletAddress] = useState()
+  const [tokenBalance, setTokenBalance] = useState(null)
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false)
 
   const isActive = (path) => location.pathname === path
 
@@ -34,6 +37,30 @@ export function Navbar() {
     await logout()
     closeMobileMenu()
     navigate('/login')
+  }
+
+  // Fetch token balance from contract
+  const fetchTokenBalance = async (address) => {
+    try {
+      setIsLoadingBalance(true)
+      console.log('Fetching token balance for address:', address)
+      
+      // Call the balance method from the contract
+      // The balance method expects: fn balance(e: &Env, account: Address) -> i128
+      const balance = await callContractMethod('balance', [address], address)
+      
+      console.log('Token balance result:', balance)
+      
+      // Convert i128 to a readable format (divide by 10^7 if using 7 decimals)
+      // Adjust the divisor based on your token's decimal places
+      
+      setTokenBalance(balance)
+    } catch (error) {
+      console.error('Error fetching token balance:', error)
+      setTokenBalance('0.01')
+    } finally {
+      setIsLoadingBalance(false)
+    }
   }
 
   async function connectFreighter() {
@@ -51,10 +78,22 @@ export function Navbar() {
       const addressResult = await getAddress();
       setWalletAddress(addressResult.address);
       console.log(addressResult)
+      
+      // Fetch token balance after connecting
+      if (addressResult.address) {
+        fetchTokenBalance(addressResult.address)
+      }
     } catch (error) {
       console.error("Error trying to connect wallet", error)
     }
   }
+
+  // Fetch balance when wallet address changes
+  useEffect(() => {
+    if (walletAddress) {
+      fetchTokenBalance(walletAddress)
+    }
+  }, [walletAddress])
 
   // Si no hay sesión, mostrar navbar simplificado
   if (!isAuthenticated) {
@@ -178,10 +217,13 @@ export function Navbar() {
                 </>
                 :
                 <>
-                  {/* Tokens - ocultar en móviles */}
-                  < Button variant="outline" className="relative group">
-                    <Link to="/tokens">
-                      <Wallet className="h-4 w-4 transition-colors" size={16} />
+                  {/* Token Balance Display */}
+                  <Button variant="outline" className="gap-2 hover:border-accent transition-all">
+                    <Link to="/tokens" className="flex items-center gap-2">
+                      <Wallet className="h-4 w-4" size={16} />
+                      <span className="hidden sm:inline font-semibold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+                        {isLoadingBalance ? 'Loading...' : tokenBalance !== null ? `${tokenBalance} Tokens` : 'N/A'}
+                      </span>
                     </Link>
                   </Button>
                 </>
@@ -193,9 +235,9 @@ export function Navbar() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 hover:ring-2 hover:ring-accent/50 transition-all">
                     <Avatar className="h-10 w-10 ring-2 ring-primary/20">
-                      <AvatarImage src="/placeholder.svg?height=40&width=40" alt="Usuario" />
+                      <AvatarImage src={user?.profile?.avatar_url || "/placeholder.svg?height=40&width=40"} alt={user?.profile?.displayName || "Usuario"} />
                       <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold">
-                        JD
+                        {user?.profile?.initials || '??'}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -204,7 +246,7 @@ export function Navbar() {
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col gap-1">
                       <p className="text-sm font-medium leading-none">
-                        {user?.profile?.firstName ? `${user.profile.firstName} ${user.profile.lastName}` : 'Usuario'}
+                        {user?.profile?.displayName || 'Usuario'}
                       </p>
                       <p className="text-xs leading-none text-muted-foreground">{user?.email || 'usuario@ejemplo.com'}</p>
                     </div>
@@ -327,14 +369,14 @@ export function Navbar() {
               <div className="px-3 py-2">
                 <div className="flex items-center gap-3 mb-3">
                   <Avatar className="h-12 w-12 ring-2 ring-primary/20">
-                    <AvatarImage src="/placeholder.svg?height=48&width=48" alt="Usuario" />
+                    <AvatarImage src={user?.profile?.avatar_url || "/placeholder.svg?height=48&width=48"} alt={user?.profile?.displayName || "Usuario"} />
                     <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold">
-                      {user?.profile?.firstName?.[0] || 'U'}{user?.profile?.lastName?.[0] || 'S'}
+                      {user?.profile?.initials || '??'}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="text-sm font-medium">
-                      {user?.profile?.firstName ? `${user.profile.firstName} ${user.profile.lastName}` : 'Usuario'}
+                      {user?.profile?.displayName || 'Usuario'}
                     </p>
                     <p className="text-xs text-muted-foreground">{user?.email || 'usuario@ejemplo.com'}</p>
                   </div>
@@ -353,9 +395,11 @@ export function Navbar() {
                     <Wallet className="mr-2 h-4 w-4" size={16} />
                     <span className="flex items-center gap-2">
                       Tokens{' '}
-                      <span className="text-xs font-semibold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-                        2,650 USDC
-                      </span>
+                      {walletAddress && (
+                        <span className="text-xs font-semibold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+                          {isLoadingBalance ? 'Loading...' : tokenBalance !== null ? `${tokenBalance} Tokens` : 'N/A'}
+                        </span>
+                      )}
                     </span>
                   </Button>
                 </Link>

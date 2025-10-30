@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../../../contexts/AuthContext';
 import * as feedService from '../services/feedService';
 
 /**
@@ -6,6 +7,7 @@ import * as feedService from '../services/feedService';
  * @returns {Object} Estado y funciones del feed
  */
 export const useFeedController = () => {
+  const { user } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [likedJobs, setLikedJobs] = useState(new Set());
@@ -141,52 +143,64 @@ export const useFeedController = () => {
    * Alterna el guardado de un trabajo
    */
   const toggleSave = async (jobId) => {
+    if (!user?.id) {
+      console.error('Usuario no autenticado');
+      return;
+    }
+    
     const newSavedJobs = new Set(savedJobs);
     const isSaved = newSavedJobs.has(jobId);
     
-    if (isSaved) {
-      newSavedJobs.delete(jobId);
-      await feedService.unsaveJob(jobId);
-    } else {
-      newSavedJobs.add(jobId);
-      await feedService.saveJob(jobId);
-    }
-    
-    setSavedJobs(newSavedJobs);
-    
-    // Actualizar stats
-    setUserStats(prev => ({
-      ...prev,
-      savedJobs: newSavedJobs.size,
-    }));
-  };
-
-  /**
-   * Aplica a un trabajo
-   */
-  const applyToJob = async (jobId) => {
     try {
-      await feedService.applyToJob(jobId);
+      if (isSaved) {
+        newSavedJobs.delete(jobId);
+        await feedService.unsaveJob(jobId, user.id);
+      } else {
+        newSavedJobs.add(jobId);
+        await feedService.saveJob(jobId, user.id);
+      }
+      
+      setSavedJobs(newSavedJobs);
       
       // Actualizar stats
       setUserStats(prev => ({
         ...prev,
-        applicationsSubmitted: prev.applicationsSubmitted + 1,
+        savedJobs: newSavedJobs.size,
       }));
+    } catch (error) {
+      console.error('Error al guardar/remover trabajo:', error);
+    }
+  };
+
+  /**
+   * Aplica a un trabajo
+   * @param {Object} applicationData - Datos de la aplicación (jobId, freelancerId, coverLetter)
+   */
+  const applyToJob = async (applicationData) => {
+    try {
+      const result = await feedService.applyToJob(applicationData);
       
-      // Actualizar el contador de aplicantes en el trabajo
-      setJobs(prevJobs => 
-        prevJobs.map(job => 
-          job.id === jobId 
-            ? { ...job, applicants: job.applicants + 1 }
-            : job
-        )
-      );
+      if (result.success) {
+        // Actualizar stats
+        setUserStats(prev => ({
+          ...prev,
+          applicationsSubmitted: prev.applicationsSubmitted + 1,
+        }));
+        
+        // Actualizar el contador de aplicantes en el trabajo
+        setJobs(prevJobs => 
+          prevJobs.map(job => 
+            job.id === applicationData.jobId 
+              ? { ...job, applicants: job.applicants + 1 }
+              : job
+          )
+        );
+      }
       
-      return true;
+      return result;
     } catch (error) {
       console.error('Error aplicando al trabajo:', error);
-      return false;
+      throw error;
     }
   };
 
