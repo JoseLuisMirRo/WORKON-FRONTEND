@@ -11,6 +11,7 @@ export const useMyJobsController = () => {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [userId, setUserId] = useState(null)
+  const [milestoneFiles, setMilestoneFiles] = useState({}) // { milestoneId: [files] }
 
   // Get user ID from localStorage on mount
   useEffect(() => {
@@ -77,6 +78,35 @@ export const useMyJobsController = () => {
     }
   }
 
+  const loadMilestoneFiles = async (milestoneId) => {
+    try {
+      const res = await myJobsService.listMilestoneFiles(milestoneId)
+      if (res.ok) {
+        setMilestoneFiles(prev => ({ ...prev, [milestoneId]: res.data }))
+      }
+    } catch (error) {
+      console.error('Error loading milestone files:', error)
+    }
+  }
+
+  const onUploadDeliverables = async (milestoneId, files) => {
+    try {
+      // Upload files to Storage and DB (RPC atomically updates status to 'en_revision')
+      const uploadRes = await myJobsService.uploadMilestoneFiles(milestoneId, files)
+      if (!uploadRes.ok) {
+        throw new Error(uploadRes.error?.message || 'Upload failed')
+      }
+
+      // Reload files for this milestone
+      await loadMilestoneFiles(milestoneId)
+      
+      return { ok: true }
+    } catch (error) {
+      console.error('Error uploading deliverables:', error)
+      return { ok: false, error }
+    }
+  }
+
   return {
     jobs,
     stats,
@@ -85,6 +115,9 @@ export const useMyJobsController = () => {
     changeFilter,
     toggleDeliverable,
     reloadJobs: loadData,
+    milestoneFiles,
+    loadMilestoneFiles,
+    onUploadDeliverables,
   }
 }
 
