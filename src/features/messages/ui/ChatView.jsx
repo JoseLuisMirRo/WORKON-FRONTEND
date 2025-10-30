@@ -5,7 +5,7 @@ import { Card } from '../../../components/ui/Card'
 import { MoreVertical, Phone, Video } from '../../../components/ui/Icons'
 import { cn } from '../../../lib/utils'
 
-export function ChatView({ conversation, messages }) {
+export function ChatView({ conversation, messages, messagesEndRef }) {
   if (!conversation) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -84,50 +84,63 @@ export function ChatView({ conversation, messages }) {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={cn(
-              "flex gap-3 animate-fade-in",
-              message.sender === 'me' ? 'flex-row-reverse' : 'flex-row'
-            )}
-          >
-            {message.sender !== 'me' && (
-              <Avatar className="h-8 w-8 ring-2 ring-border/20">
-                <AvatarImage src={conversation.avatar} alt={conversation.name} />
-                <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-xs font-bold">
-                  {conversation.name.split(' ').map(n => n[0]).join('')}
-                </AvatarFallback>
-              </Avatar>
-            )}
-            
-            <div
-              className={cn(
-                "max-w-[70%] space-y-1",
-                message.sender === 'me' ? 'items-end' : 'items-start'
-              )}
-            >
-              <Card
-                className={cn(
-                  "p-3 shadow-md",
-                  message.sender === 'me'
-                    ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground border-primary/50'
-                    : 'bg-card/80 border-border/50'
-                )}
-              >
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                  {message.content}
-                </p>
-              </Card>
-              <span className={cn(
-                "text-xs text-muted-foreground px-2",
-                message.sender === 'me' ? 'text-right' : 'text-left'
-              )}>
-                {message.timestamp}
-              </span>
+        {messages.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center space-y-2">
+              <p className="text-muted-foreground">No hay mensajes aún</p>
+              <p className="text-sm text-muted-foreground">Inicia la conversación enviando un mensaje</p>
             </div>
           </div>
-        ))}
+        ) : (
+          <>
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={cn(
+                  "flex gap-3 animate-fade-in",
+                  message.sender === 'me' ? 'flex-row-reverse' : 'flex-row'
+                )}
+              >
+                {message.sender !== 'me' && (
+                  <Avatar className="h-8 w-8 ring-2 ring-border/20">
+                    <AvatarImage src={conversation.avatar} alt={conversation.name} />
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-xs font-bold">
+                      {conversation.name.split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+                
+                <div
+                  className={cn(
+                    "max-w-[70%] space-y-1",
+                    message.sender === 'me' ? 'items-end' : 'items-start'
+                  )}
+                >
+                  <Card
+                    className={cn(
+                      "p-3 shadow-md",
+                      message.sender === 'me'
+                        ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground border-primary/50'
+                        : 'bg-card/80 border-border/50'
+                    )}
+                  >
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                      {message.content}
+                    </p>
+                  </Card>
+                  <span className={cn(
+                    "text-xs text-muted-foreground px-2",
+                    message.sender === 'me' ? 'text-right' : 'text-left'
+                  )}>
+                    {message.timestamp}
+                  </span>
+                </div>
+              </div>
+            ))}
+            {/* Scroll anchor */}
+            <div ref={messagesEndRef} />
+          </>
+        )}
       </div>
     </div>
   )
