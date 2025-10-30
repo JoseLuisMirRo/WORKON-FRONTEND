@@ -520,6 +520,7 @@ export const updateEmployerProfile = async (updates) => {
   const dbUpdates = {}
   if (updates.companyName) dbUpdates.full_name = updates.companyName
   if (updates.description) dbUpdates.bio = updates.description
+  if (updates.industry) dbUpdates.portfolio_summary = updates.industry
   if (updates.wallet_address) dbUpdates.wallet_address = updates.wallet_address
   
   const updated = await updateMyProfile(dbUpdates)
@@ -604,5 +605,126 @@ export const removeEducation = async (educationId) => {
   await new Promise(resolve => setTimeout(resolve, 300))
   console.log('Educación eliminada:', educationId)
   return true
+}
+
+// ============================================================================
+// EMPLOYER-SPECIFIC FUNCTIONS (Real Supabase Data)
+// ============================================================================
+
+const ok = (data) => ({ ok: true, data })
+const fail = (error) => ({ 
+  ok: false, 
+  error: { 
+    code: error?.code || 'UNKNOWN', 
+    message: error?.message || String(error) 
+  } 
+})
+
+const PROFILE_COLS = 'id, role, full_name, email, wallet_address, rating, bio, portfolio_summary, created_at, updated_at'
+
+/**
+ * Get employer profile by ID (for public/internal view)
+ * @param {string} employerId - Employer UUID
+ * @returns {Promise<{ok: boolean, data?: Object, error?: Object}>}
+ */
+export const getEmployerProfileById = async (employerId) => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(PROFILE_COLS)
+      .eq('id', employerId)
+      .eq('role', 'employer')
+      .single()
+    
+    if (error) return fail(error)
+    return ok(data)
+  } catch (e) {
+    return fail(e)
+  }
+}
+
+/**
+ * Get current authenticated user's employer profile
+ * @returns {Promise<{ok: boolean, data?: Object, error?: Object}>}
+ */
+export const getMyEmployerProfile = async () => {
+  try {
+    const { data: authData, error: authError } = await supabase.auth.getUser()
+    if (authError || !authData?.user) {
+      return fail(authError || new Error('Not authenticated'))
+    }
+    
+    const userId = authData.user.id
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(PROFILE_COLS)
+      .eq('id', userId)
+      .eq('role', 'employer')
+      .single()
+    
+    if (error) return fail(error)
+    return ok(data)
+  } catch (e) {
+    return fail(e)
+  }
+}
+
+/**
+ * Fetch all proposals posted by an employer
+ * @param {string} employerId - Employer UUID
+ * @returns {Promise<{ok: boolean, data?: Array, error?: Object}>}
+ */
+export const fetchEmployerProposals = async (employerId) => {
+  try {
+    const { data, error } = await supabase
+      .from('proposals')
+      .select('id, title, description, total_payment, status, created_at, updated_at, tags')
+      .eq('employer_id', employerId)
+      .order('created_at', { ascending: false })
+    
+    if (error) return fail(error)
+    return ok(data || [])
+  } catch (e) {
+    return fail(e)
+  }
+}
+
+/**
+ * Compute employer statistics from proposals table
+ * @param {string} employerId - Employer UUID
+ * @returns {Promise<{ok: boolean, data?: Object, error?: Object}>}
+ */
+export const computeEmployerStats = async (employerId) => {
+  try {
+    const { data, error } = await supabase
+      .from('proposals')
+      .select('status, total_payment')
+      .eq('employer_id', employerId)
+    
+    if (error) return fail(error)
+    
+    const rows = data || []
+    const total = rows.length
+    const published = rows.filter(r => r.status === 'publicada').length
+    const inProgress = rows.filter(r => 
+      r.status === 'en_progreso' || r.status === 'in_progress'
+    ).length
+    const completed = rows.filter(r => 
+      r.status === 'completada' || r.status === 'completed'
+    ).length
+    const totalSpent = rows
+      .filter(r => r.status === 'completada' || r.status === 'completed')
+      .reduce((sum, r) => sum + (Number(r.total_payment) || 0), 0)
+    
+    return ok({
+      proposalsTotal: total,
+      proposalsPublished: published,
+      proposalsInProgress: inProgress,
+      proposalsCompleted: completed,
+      totalSpent
+    })
+  } catch (e) {
+    return fail(e)
+  }
 }
 
