@@ -3,8 +3,10 @@ import { Badge } from '../../../components/ui/Badge'
 import { Button } from '../../../components/ui/Button'
 import { Avatar, AvatarImage, AvatarFallback } from '../../../components/ui/Avatar'
 import { Calendar, Wallet, MessageCircle, Clock } from '../../../components/ui/Icons'
+import { useStartChat } from '../../messages'
 
 export function MyJobCard({ job, onViewDetails }) {
+  const { startChat } = useStartChat()
   const getStatusColor = (status) => {
     const colors = {
       'pendiente': 'secondary',
@@ -125,6 +127,16 @@ export function MyJobCard({ job, onViewDetails }) {
               variant="outline" 
               size="sm"
               className="border-accent/50 hover:border-accent hover:text-accent"
+              onClick={() => {
+                console.log('🔵 Botón chat clickeado. Job:', job)
+                console.log('🔵 employerId:', job.employerId, 'proposalId:', job.proposalId)
+                if (job.employerId) {
+                  startChat(job.employerId, job.proposalId)
+                } else {
+                  alert('Este trabajo no tiene un employerId válido')
+                }
+              }}
+              title="Enviar mensaje al cliente"
             >
               <MessageCircle className="h-4 w-4" size={16} />
             </Button>

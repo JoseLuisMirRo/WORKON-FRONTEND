@@ -7,8 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Wallet, Calendar, Clock, MessageCircle, CheckCircle2, FileText, AlertCircle, User } from '../../../components/ui/Icons'
 import { Separator } from '../../../components/ui/Separator'
 import { supabase } from '../../../lib/supabaseClient'
+import { useStartChat } from '../../messages'
 
 export function JobDetailsModal({ isOpen, onClose, job, milestoneFiles = {}, onLoadMilestoneFiles, onUploadDeliverables }) {
+  const { startChat } = useStartChat()
   const [activeTab, setActiveTab] = useState('overview') // overview, deliverables, messages
   const [milestones, setMilestones] = useState([])
   const [loadingMilestones, setLoadingMilestones] = useState(false)
@@ -266,7 +268,11 @@ export function JobDetailsModal({ isOpen, onClose, job, milestoneFiles = {}, onL
                     <p className="text-sm text-muted-foreground">Cliente desde hace 2 años</p>
                   </div>
 
-                  <Button size="sm" className="gap-2">
+                  <Button 
+                    size="sm" 
+                    className="gap-2"
+                    onClick={() => job.employerId && startChat(job.employerId, job.proposalId)}
+                  >
                     <MessageCircle className="h-4 w-4" size={16} />
                     Enviar mensaje
                   </Button>
@@ -437,9 +443,12 @@ export function JobDetailsModal({ isOpen, onClose, job, milestoneFiles = {}, onL
                 <p className="text-sm text-muted-foreground mb-4">
                   Los mensajes relacionados con este proyecto aparecerán aquí.
                 </p>
-                <Button className="gap-2">
+                <Button 
+                  className="gap-2"
+                  onClick={() => job.employerId && startChat(job.employerId, job.proposalId)}
+                >
                   <MessageCircle className="h-4 w-4" size={16} />
-                  Ir a mensajes
+                  Iniciar conversación
                 </Button>
               </CardContent>
             </Card>
